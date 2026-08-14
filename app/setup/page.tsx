@@ -12,6 +12,7 @@ const YEAR_OPTIONS = Array.from({ length: 27 }, (_, i) =>
 export default function SetupPage() {
   const [name, setName] = useState('')
   const [classYear, setClassYear] = useState<ClassYear | null>(null)
+  const [linkedin, setLinkedin] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -31,6 +32,7 @@ export default function SetupPage() {
       email: user.email,
       name: name.trim(),
       class_year: classYear,
+      linkedin_url: linkedin.trim() || null,
     })
 
     if (error) {
@@ -114,6 +116,25 @@ export default function SetupPage() {
                   </button>
                 )
               })}
+            </div>
+          </div>
+
+          {/* LinkedIn — optional */}
+          <div>
+            <label className="block text-sm text-slate-400 mb-1.5">
+              LinkedIn <span className="text-slate-600 text-xs">(optional)</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm select-none">
+                linkedin.com/in/
+              </span>
+              <input
+                type="text"
+                value={linkedin}
+                onChange={e => setLinkedin(e.target.value.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/?/, ''))}
+                placeholder="your-handle"
+                className="w-full pl-36 pr-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
+              />
             </div>
           </div>
 

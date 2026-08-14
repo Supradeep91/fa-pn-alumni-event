@@ -17,7 +17,7 @@ export default async function PassportPage() {
   // Get all stamps involving this user
   const { data: stamps } = await supabase
     .from('stamps')
-    .select('*, partner_a:profiles!stamps_user_a_fkey(id,name,class_year), partner_b:profiles!stamps_user_b_fkey(id,name,class_year)')
+    .select('*, partner_a:profiles!stamps_user_a_fkey(id,name,class_year,linkedin_url), partner_b:profiles!stamps_user_b_fkey(id,name,class_year,linkedin_url)')
     .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
 
   const partners = (stamps ?? []).map(s => {

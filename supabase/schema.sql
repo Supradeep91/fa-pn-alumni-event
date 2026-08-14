@@ -14,6 +14,7 @@ create table if not exists profiles (
       'CEO','CFO','Coach'
     )
   ),
+  linkedin_url text,
   created_at timestamptz default now()
 );
 

@@ -50,6 +50,7 @@ export interface Profile {
   email: string
   name: string
   class_year: ClassYear
+  linkedin_url: string | null
   created_at: string
 }
 
