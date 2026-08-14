@@ -73,6 +73,11 @@ export default function PassportClient({ profile, initialPartners, initialAchiev
     return () => { supabase.removeChannel(channel) }
   }, [profile.id, supabase])
 
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   async function toggleFutureMatch(partnerId: string) {
     const isFlagged = futureMatches.has(partnerId)
     if (isFlagged) {
@@ -98,7 +103,16 @@ export default function PassportClient({ profile, initialPartners, initialAchiev
   return (
     <div className="min-h-dvh bg-slate-950 pb-20">
       {/* Header */}
-      <div className={`px-4 pt-12 pb-6 text-center ${CLASS_COLORS[profile.class_year]}`}>
+      <div className={`relative px-4 pt-12 pb-6 text-center ${CLASS_COLORS[profile.class_year]}`}>
+        <button
+          onClick={handleLogout}
+          title="Log out"
+          className="absolute top-4 right-4 opacity-50 hover:opacity-100 transition p-1"
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-current stroke-2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+          </svg>
+        </button>
         <p className="text-xs uppercase tracking-widest opacity-75 mb-1">FA PN Passport</p>
         <h1 className="text-2xl font-bold">{profile.name}</h1>
         <p className="text-sm opacity-80 mt-0.5">{CLASS_LABELS[profile.class_year]}</p>
