@@ -31,6 +31,7 @@ Each attendee gets a **digital passport**. The mission: collect stamps by meetin
 - Show them your QR code (on your passport screen)
 - They scan it with their camera
 - Both of you tap **"Confirm"** — stamp added to both passports
+- The success screen shows a **LinkedIn button** if they have a handle set — tap to open their profile in one go
 - Check your passport to see your growing collection
 
 ### 5. Unlock Achievements & Compete
@@ -40,13 +41,18 @@ Each attendee gets a **digital passport**. The mission: collect stamps by meetin
 
 ---
 
-## Passport
+## Passport Screen
 
 Every attendee has a personal passport with:
 - Their unique **QR code** (for others to scan)
-- A **stamp collection** showing which classes they've connected with
+- A **stamp grid** showing which classes they've connected with (displayed as pills)
 - Their **unlocked achievements**
 - The **4 conversation questions**
+
+### LinkedIn
+Attendees can optionally add their LinkedIn handle during profile setup. When set:
+- A **LinkedIn icon** appears next to their name in the connections list
+- A **LinkedIn button** appears on the stamp success screen so the other person can follow up immediately
 
 ---
 

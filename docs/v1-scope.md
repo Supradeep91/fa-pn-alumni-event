@@ -5,16 +5,16 @@
 
 ---
 
-## Everything in MVP, plus:
+## Everything in MVP (features 1–7), plus:
 
 | # | Feature | Detail |
 |---|---|---|
-| 7 | **Achievements** | 6 badges that auto-unlock based on stamp/connection logic |
-| 8 | **Achievement notifications** | In-app alert + haptic when a badge unlocks |
-| 9 | **Network wall** | Visual graph of all connections, nodes coloured by class year |
-| 10 | **Admin panel** | Manage attendees, view live activity, trigger finale screen |
-| 11 | **Finale screen** | Full-screen display for the projector — shows achievement winners & class champion |
-| 12 | **Future Match follow-up** | Post-event email summarising who you connected with and their contact details |
+| 8 | **Achievements** | 6 badges that auto-unlock based on stamp/connection logic |
+| 9 | **Achievement notifications** | In-app alert + haptic when a badge unlocks |
+| 10 | **Network wall** | Visual graph of all connections, nodes coloured by class year |
+| 11 | **Admin panel** | Manage attendees, view live activity, trigger finale screen |
+| 12 | **Finale screen** | Full-screen display for the projector — shows achievement winners & class champion |
+| 13 | **Future Match follow-up** | Post-event email summarising who you connected with and their contact details |
 
 ---
 
@@ -76,7 +76,6 @@ Designed to be shown on a projector at the end of the 60–75 min networking pha
 - [ ] Should CEO/CFO profiles show a special indicator on the network wall?
 - [ ] Keep the app live after the event, or shut it down?
 - [ ] Does "Perfect Stranger" require verification, or is self-reported fine?
-- [ ] LinkedIn field on profile — optional or required?
 
 ---
 
@@ -84,7 +83,7 @@ Designed to be shown on a projector at the end of the 60–75 min networking pha
 
 | Feature | Estimated Days |
 |---|---|
-| MVP (all 6 features) | 7–8 days |
+| MVP (features 1–7, including LinkedIn) | 7–8 days ✓ done |
 | Achievements engine | 2 days |
 | Achievement notifications | 0.5 day |
 | Network wall (graph) | 2 days |

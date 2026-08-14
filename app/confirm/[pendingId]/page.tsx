@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 import { CLASS_LABELS, CLASS_COLORS, type ClassYear } from '@/types'
+import { checkAndUnlockAchievements, type AchievementKey } from '@/lib/achievements'
+import AchievementToast from '@/components/AchievementToast'
 
 interface PartnerProfile {
   id: string
@@ -22,6 +24,7 @@ export default function ConfirmPage() {
   const [role, setRole] = useState<'initiator' | 'target' | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'confirming' | 'done' | 'error' | 'expired'>('loading')
   const [errorMsg, setErrorMsg] = useState('')
+  const [newAchievements, setNewAchievements] = useState<AchievementKey[]>([])
 
   useEffect(() => {
     async function load() {
@@ -98,6 +101,9 @@ export default function ConfirmPage() {
       return
     }
 
+    // Check for newly unlocked achievements
+    const newlyUnlocked = await checkAndUnlockAchievements(myId)
+    setNewAchievements(newlyUnlocked)
     setStatus('done')
   }
 
@@ -150,6 +156,12 @@ export default function ConfirmPage() {
 
     return (
       <div className="min-h-dvh bg-slate-950 flex flex-col items-center justify-center px-6 text-center space-y-6">
+        {newAchievements.length > 0 && (
+          <AchievementToast
+            newKeys={newAchievements}
+            onDone={() => setNewAchievements([])}
+          />
+        )}
         <div className="text-6xl">🎉</div>
         <div>
           <h2 className="text-2xl font-bold">Stamp collected!</h2>

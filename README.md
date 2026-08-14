@@ -19,13 +19,35 @@ This app turns the alumni evening into a structured networking game:
 
 ---
 
+## Current Status
+
+**MVP is complete and live on Vercel.**
+
+| Feature | Status |
+|---|---|
+| Email magic link login | Done |
+| Profile setup (name + cohort year) | Done |
+| Digital passport (QR code + stamp grid) | Done |
+| QR stamping with mutual confirmation | Done |
+| Conversation questions | Done |
+| Class leaderboard (real-time) | Done |
+| LinkedIn handle + button + icon | Done |
+| Achievements (6 badges) | In progress |
+| Achievement notifications | To do |
+| Network wall / connection graph | To do |
+| Admin panel | To do |
+| Finale screen | To do |
+| Future Match follow-up email | To do |
+
+---
+
 ## Docs
 
 | Document | Description |
 |---|---|
-| [MVP Scope](docs/mvp-scope.md) | What gets built for event day (~1.5 weeks) |
-| [V1 Scope](docs/v1-scope.md) | Full feature set with achievements & admin (~4 weeks) |
-| [How It Works](docs/how-it-works.md) | Game mechanics, stamping flow, achievements |
+| [MVP Scope](docs/mvp-scope.md) | The 7 features shipped for event day |
+| [V1 Scope](docs/v1-scope.md) | Full feature set — achievements, admin, network wall, finale |
+| [How It Works](docs/how-it-works.md) | Game mechanics, passport, stamping flow, LinkedIn |
 
 ---
 

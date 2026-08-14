@@ -10,11 +10,12 @@
 | # | Feature | Detail |
 |---|---|---|
 | 1 | **Email login** | Magic link — one-tap sign-in, no password |
-| 2 | **Profile setup** | Name + class year ('20, '21, '22, '23, '24, '25, CEO, CFO) |
-| 3 | **Digital passport** | Your personal QR code + list of stamps collected so far |
-| 4 | **QR stamping** | Scan someone's QR → both users confirm → stamp added to both passports |
+| 2 | **Profile setup** | Name + cohort year (2000–2026, CEO, CFO, Coach) |
+| 3 | **Digital passport** | QR code, stamp grid (collected as pills), conversation questions |
+| 4 | **QR stamping** | Scan someone's QR → mutual confirmation → stamp recorded for both |
 | 5 | **Conversation questions** | 4 static questions shown on passport screen to guide conversations |
-| 6 | **Class leaderboard** | Live ranking of all classes by number of connections made |
+| 6 | **Class leaderboard** | Live real-time ranking of all classes by number of connections made |
+| 7 | **LinkedIn** | Optional handle on profile setup; LinkedIn button on stamp success screen; LinkedIn icon in connections list |
 
 ---
 
@@ -42,10 +43,11 @@
 ## Out of Scope for MVP
 
 - Achievements and badge unlocks → V1
+- Achievement notifications → V1
 - Network wall / connection graph → V1
 - Admin panel → V1
 - Finale screen → V1
-- Post-event follow-up email → V1
+- Future Match follow-up email → V1
 - Photo booth, slideshow, memory wall → not in app scope
 
 ---
@@ -55,4 +57,5 @@
 - Every attendee can log in within 2 minutes of arriving
 - QR scan + stamp confirmation completes in under 30 seconds
 - Leaderboard updates in real time with no manual refresh
-- App works on any phone browser without installation
+- App works on any phone browser without installation (PWA)
+- LinkedIn handle is optional — zero friction if skipped

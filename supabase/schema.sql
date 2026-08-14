@@ -47,6 +47,10 @@ create policy "Users can read all stamps"
 create policy "Users can insert stamps involving themselves"
   on stamps for insert with check (auth.uid() = user_a or auth.uid() = user_b);
 
+create policy "Users can update stamps involving themselves"
+  on stamps for update
+  using (auth.uid() = user_a or auth.uid() = user_b);
+
 -- Enable real-time for leaderboard + passport updates
 alter publication supabase_realtime add table stamps;
 
@@ -75,3 +79,47 @@ create policy "Users can update pending stamps involving themselves"
 
 -- Enable real-time for incoming stamp notifications
 alter publication supabase_realtime add table pending_stamps;
+
+-- ─── Achievements ────────────────────────────────────────────────────────────
+create table if not exists achievements (
+  id           uuid default gen_random_uuid() primary key,
+  user_id      uuid references profiles(id) on delete cascade not null,
+  key          text not null check (key in (
+                 'time_traveller','leadership_unlock','perfect_stranger',
+                 'future_match','full_house'
+               )),
+  unlocked_at  timestamptz default now(),
+  unique(user_id, key)
+);
+
+alter table achievements enable row level security;
+
+create policy "Users can read all achievements"
+  on achievements for select using (true);
+
+create policy "Users can insert their own achievements"
+  on achievements for insert with check (auth.uid() = user_id);
+
+alter publication supabase_realtime add table achievements;
+
+-- ─── Future Match flags ───────────────────────────────────────────────────────
+-- Stored separately so either party in a stamp can flag the other
+create table if not exists future_matches (
+  id         uuid default gen_random_uuid() primary key,
+  flagger_id uuid references profiles(id) on delete cascade not null,
+  flagged_id uuid references profiles(id) on delete cascade not null,
+  created_at timestamptz default now(),
+  unique(flagger_id, flagged_id)
+);
+
+alter table future_matches enable row level security;
+
+create policy "Users can read their own future matches"
+  on future_matches for select
+  using (auth.uid() = flagger_id or auth.uid() = flagged_id);
+
+create policy "Users can insert their own future matches"
+  on future_matches for insert with check (auth.uid() = flagger_id);
+
+create policy "Users can delete their own future matches"
+  on future_matches for delete using (auth.uid() = flagger_id);

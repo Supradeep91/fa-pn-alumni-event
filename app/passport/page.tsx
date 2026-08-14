@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import PassportClient from './PassportClient'
+import { type AchievementKey } from '@/lib/achievements'
 
 export default async function PassportPage() {
   const supabase = await createClient()
@@ -14,16 +15,36 @@ export default async function PassportPage() {
     .single()
   if (!profile) redirect('/setup')
 
-  // Get all stamps involving this user
-  const { data: stamps } = await supabase
-    .from('stamps')
-    .select('*, partner_a:profiles!stamps_user_a_fkey(id,name,class_year,linkedin_url), partner_b:profiles!stamps_user_b_fkey(id,name,class_year,linkedin_url)')
-    .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
+  const [stampsRes, achievementsRes, futureMatchesRes] = await Promise.all([
+    supabase
+      .from('stamps')
+      .select('*, partner_a:profiles!stamps_user_a_fkey(id,name,class_year,linkedin_url), partner_b:profiles!stamps_user_b_fkey(id,name,class_year,linkedin_url)')
+      .or(`user_a.eq.${user.id},user_b.eq.${user.id}`),
+    supabase
+      .from('achievements')
+      .select('key')
+      .eq('user_id', user.id),
+    supabase
+      .from('future_matches')
+      .select('flagged_id')
+      .eq('flagger_id', user.id),
+  ])
 
-  const partners = (stamps ?? []).map(s => {
+  const partners = (stampsRes.data ?? []).map(s => {
     const isA = s.user_a === user.id
-    return isA ? s.partner_b : s.partner_a
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return isA ? (s as any).partner_b : (s as any).partner_a
   })
 
-  return <PassportClient profile={profile} initialPartners={partners} />
+  const achievements = (achievementsRes.data ?? []).map(a => a.key as AchievementKey)
+  const futureMatches = (futureMatchesRes.data ?? []).map(f => f.flagged_id as string)
+
+  return (
+    <PassportClient
+      profile={profile}
+      initialPartners={partners}
+      initialAchievements={achievements}
+      initialFutureMatches={futureMatches}
+    />
+  )
 }
