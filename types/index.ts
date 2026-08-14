@@ -1,4 +1,4 @@
-const YEAR_RANGE = Array.from({ length: 26 }, (_, i) => String(i).padStart(2, '0')) as string[]
+const YEAR_RANGE = Array.from({ length: 27 }, (_, i) => String(i).padStart(2, '0')) as string[]
 
 export const SPECIAL_ROLES = ['CEO', 'CFO', 'Coach'] as const
 export type SpecialRole = typeof SPECIAL_ROLES[number]
@@ -13,7 +13,7 @@ export function isSpecialRole(year: ClassYear): year is SpecialRole {
 
 export function getClassLabel(year: ClassYear): string {
   if (isSpecialRole(year)) return year
-  return `FA PN '${year}`
+  return `20${year}`
 }
 
 const COLOR_CYCLE = [

@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 import { SPECIAL_ROLES, getClassLabel, getClassColor, type ClassYear } from '@/types'
 
-const YEAR_OPTIONS = Array.from({ length: 26 }, (_, i) =>
-  String(25 - i).padStart(2, '0')
+const YEAR_OPTIONS = Array.from({ length: 27 }, (_, i) =>
+  String(26 - i).padStart(2, '0')
 )
 
 export default function SetupPage() {
@@ -86,7 +86,7 @@ export default function SetupPage() {
                   >
                     <span className={`w-3 h-3 rounded-full shrink-0 ${selected ? color : 'bg-slate-600'}`} />
                     <span className={`text-sm font-medium ${selected ? 'text-white' : 'text-slate-300'}`}>
-                      FA PN &apos;{year}
+                      20{year}
                     </span>
                     {selected && <span className="ml-auto text-cyan-400 text-sm">✓</span>}
                   </button>
