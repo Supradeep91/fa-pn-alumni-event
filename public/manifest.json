@@ -1,6 +1,6 @@
 {
-  "name": "FA PN Connection Challenge",
-  "short_name": "FA PN",
+  "name": "FA PN Connect",
+  "short_name": "FA PN Connect",
   "description": "Play. Connect. Leave a Legacy.",
   "start_url": "/",
   "display": "standalone",

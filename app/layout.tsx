@@ -5,10 +5,10 @@ import './globals.css'
 const geist = Geist({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'FA PN Connection Challenge',
+  title: 'FA PN Connect',
   description: 'Play. Connect. Leave a Legacy.',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'FA PN' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'FA PN Connect' },
 }
 
 export const viewport: Viewport = {
