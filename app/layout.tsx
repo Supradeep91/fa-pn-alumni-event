@@ -9,6 +9,15 @@ export const metadata: Metadata = {
   description: 'Play. Connect. Leave a Legacy.',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'FA PN Connect' },
+  openGraph: {
+    title: 'FA PN Connect',
+    description: 'Play. Connect. Leave a Legacy.',
+    siteName: 'FA PN Connect',
+  },
+  twitter: {
+    title: 'FA PN Connect',
+    description: 'Play. Connect. Leave a Legacy.',
+  },
 }
 
 export const viewport: Viewport = {
