@@ -1,28 +1,49 @@
-export type ClassYear = '20' | '21' | '22' | '23' | '24' | '25' | 'CEO' | 'CFO'
+const YEAR_RANGE = Array.from({ length: 26 }, (_, i) => String(i).padStart(2, '0')) as string[]
 
-export const CLASS_YEARS: ClassYear[] = ['20', '21', '22', '23', '24', '25', 'CEO', 'CFO']
+export const SPECIAL_ROLES = ['CEO', 'CFO', 'Coach'] as const
+export type SpecialRole = typeof SPECIAL_ROLES[number]
 
-export const CLASS_LABELS: Record<ClassYear, string> = {
-  '20': 'Class \'20',
-  '21': 'Class \'21',
-  '22': 'Class \'22',
-  '23': 'Class \'23',
-  '24': 'Class \'24',
-  '25': 'Class \'25',
-  'CEO': 'CEO',
-  'CFO': 'CFO',
+export type ClassYear = string  // 'FA PN YY' years e.g. '00'–'25', or 'CEO'/'CFO'/'Coach'
+
+export const CLASS_YEARS: ClassYear[] = [...YEAR_RANGE, ...SPECIAL_ROLES]
+
+export function isSpecialRole(year: ClassYear): year is SpecialRole {
+  return SPECIAL_ROLES.includes(year as SpecialRole)
 }
 
-export const CLASS_COLORS: Record<ClassYear, string> = {
-  '20': 'bg-purple-500',
-  '21': 'bg-blue-500',
-  '22': 'bg-cyan-500',
-  '23': 'bg-teal-500',
-  '24': 'bg-green-500',
-  '25': 'bg-yellow-500',
-  'CEO': 'bg-red-500',
-  'CFO': 'bg-orange-500',
+export function getClassLabel(year: ClassYear): string {
+  if (isSpecialRole(year)) return year
+  return `FA PN '${year}`
 }
+
+const COLOR_CYCLE = [
+  'bg-violet-600',
+  'bg-blue-600',
+  'bg-cyan-600',
+  'bg-teal-600',
+  'bg-emerald-600',
+  'bg-green-600',
+  'bg-lime-600',
+  'bg-yellow-500',
+  'bg-amber-500',
+  'bg-orange-500',
+]
+
+export function getClassColor(year: ClassYear): string {
+  if (year === 'CEO') return 'bg-red-600'
+  if (year === 'CFO') return 'bg-orange-600'
+  if (year === 'Coach') return 'bg-pink-600'
+  const idx = parseInt(year, 10) % COLOR_CYCLE.length
+  return COLOR_CYCLE[idx]
+}
+
+// Legacy named exports kept for existing component compatibility
+export const CLASS_LABELS: Record<string, string> = Object.fromEntries(
+  CLASS_YEARS.map(y => [y, getClassLabel(y)])
+)
+export const CLASS_COLORS: Record<string, string> = Object.fromEntries(
+  CLASS_YEARS.map(y => [y, getClassColor(y)])
+)
 
 export interface Profile {
   id: string

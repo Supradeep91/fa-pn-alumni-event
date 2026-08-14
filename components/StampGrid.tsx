@@ -1,36 +1,34 @@
-import { CLASS_YEARS, CLASS_LABELS, CLASS_COLORS, type ClassYear } from '@/types'
+import { getClassLabel, getClassColor, type ClassYear } from '@/types'
 
 interface Props {
   collectedYears: ClassYear[]
 }
 
 export default function StampGrid({ collectedYears }: Props) {
-  const collected = new Set(collectedYears)
+  if (collectedYears.length === 0) {
+    return (
+      <div className="text-center py-8 text-slate-500 space-y-2">
+        <p className="text-3xl">🌍</p>
+        <p className="text-sm">No stamps yet — go meet someone!</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-3">
       <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
-        Stamps collected — {collected.size}/{CLASS_YEARS.length}
+        Stamps collected — {collectedYears.length}
       </h2>
-      <div className="grid grid-cols-4 gap-2">
-        {CLASS_YEARS.map(year => {
-          const stamped = collected.has(year)
-          return (
-            <div
-              key={year}
-              className={`aspect-square rounded-xl flex flex-col items-center justify-center text-xs font-bold transition ${
-                stamped
-                  ? `${CLASS_COLORS[year]} text-white shadow-md`
-                  : 'bg-slate-800 text-slate-600 border border-slate-700'
-              }`}
-            >
-              {stamped ? '✓' : ''}
-              <span className={stamped ? 'text-white/80 text-[10px]' : 'text-slate-600 text-[10px]'}>
-                {CLASS_LABELS[year]}
-              </span>
-            </div>
-          )
-        })}
+      <div className="flex flex-wrap gap-2">
+        {collectedYears.map((year, i) => (
+          <div
+            key={i}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white ${getClassColor(year)}`}
+          >
+            <span>✓</span>
+            <span>{getClassLabel(year)}</span>
+          </div>
+        ))}
       </div>
     </div>
   )

@@ -6,7 +6,14 @@ create table if not exists profiles (
   id        uuid references auth.users on delete cascade primary key,
   email     text not null,
   name      text not null,
-  class_year text not null check (class_year in ('20','21','22','23','24','25','CEO','CFO')),
+  class_year text not null check (
+    class_year in (
+      '00','01','02','03','04','05','06','07','08','09',
+      '10','11','12','13','14','15','16','17','18','19',
+      '20','21','22','23','24','25',
+      'CEO','CFO','Coach'
+    )
+  ),
   created_at timestamptz default now()
 );
 
