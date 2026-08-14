@@ -1,0 +1,5 @@
+export function isAdmin(email: string | undefined): boolean {
+  if (!email) return false
+  const allowed = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim().toLowerCase())
+  return allowed.includes(email.toLowerCase())
+}
