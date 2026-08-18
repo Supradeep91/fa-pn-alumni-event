@@ -119,11 +119,11 @@ export default function LoginPage() {
               <div className="text-3xl">📬</div>
               <p className="font-medium">Check your email</p>
               <p className="text-sm text-slate-400">
-                We sent a 6-digit code to <span className="text-white font-medium">{email}</span>
+                We sent a code to <span className="text-white font-medium">{email}</span>
               </p>
             </div>
             <div>
-              <label htmlFor="otp" className="block text-sm text-slate-400 mb-1.5">Enter the 6-digit code</label>
+              <label htmlFor="otp" className="block text-sm text-slate-400 mb-1.5">Enter the code from your email</label>
               <input
                 id="otp"
                 type="text"
