@@ -1,14 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-client'
+
+function isIosNotSafari() {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  const isIos = /iPhone|iPad|iPod/.test(ua)
+  const isSafari = /Safari/.test(ua) && !/CriOS|EdgA|OPiOS|FxiOS/.test(ua)
+  return isIos && !isSafari
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [wrongBrowser, setWrongBrowser] = useState(false)
   const supabase = createClient()
+
+  useEffect(() => { setWrongBrowser(isIosNotSafari()) }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -31,6 +42,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-6 bg-slate-950">
+      {wrongBrowser && (
+        <div className="w-full max-w-sm mb-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-sm space-y-1">
+          <p className="font-semibold text-amber-400">Open in Safari for best experience</p>
+          <p className="text-amber-300/80 text-xs">
+            Copy this URL and paste it into Safari to log in and install the app on your home screen.
+          </p>
+          <button
+            onClick={() => navigator.clipboard.writeText(window.location.href)}
+            className="mt-1 px-3 py-1.5 bg-amber-500 text-slate-900 rounded-lg text-xs font-semibold"
+          >
+            Copy URL
+          </button>
+        </div>
+      )}
       <div className="w-full max-w-sm space-y-8">
         {/* Logo / Title */}
         <div className="text-center space-y-2">
@@ -41,18 +66,29 @@ export default function LoginPage() {
         </div>
 
         {sent ? (
-          <div className="rounded-2xl bg-slate-800 p-6 text-center space-y-3">
-            <div className="text-3xl">📬</div>
-            <p className="font-medium">Check your email</p>
-            <p className="text-sm text-slate-400">
-              We sent a magic link to <span className="text-white font-medium">{email}</span>
-            </p>
-            <button
-              onClick={() => setSent(false)}
-              className="text-xs text-slate-500 underline mt-2"
-            >
-              Use a different email
-            </button>
+          <div className="space-y-3">
+            <div className="rounded-2xl bg-slate-800 p-6 text-center space-y-3">
+              <div className="text-3xl">📬</div>
+              <p className="font-medium">Check your email</p>
+              <p className="text-sm text-slate-400">
+                We sent a magic link to <span className="text-white font-medium">{email}</span>
+              </p>
+              <button
+                onClick={() => setSent(false)}
+                className="text-xs text-slate-500 underline mt-2"
+              >
+                Use a different email
+              </button>
+            </div>
+            {wrongBrowser && (
+              <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 text-sm space-y-1">
+                <p className="font-semibold text-amber-400">⚠️ Click the link in Safari</p>
+                <p className="text-amber-300/80 text-xs">
+                  When you tap the magic link in your email, it may open in Chrome or Edge.
+                  If that happens, copy the URL from the address bar and paste it into Safari instead — that&apos;s where you can install the app.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
