@@ -32,7 +32,11 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setError(error.message)
+      if (error.message.toLowerCase().includes('rate limit') || error.message.toLowerCase().includes('over_email')) {
+        setError('Too many login attempts. Please wait a few minutes and try again.')
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
     } else {
       setSent(true)
