@@ -96,10 +96,23 @@ export async function checkAndUnlockAchievements(
   const hasFutureMatch = (futureMatches ?? []).length > 0
 
   // Fetch all present class years from profiles (for Full House)
+  // Only count non-leadership cohort years (CEO/CFO handled separately)
   const { data: allProfiles } = await supabase
     .from('profiles')
     .select('class_year')
-  const presentClasses = new Set((allProfiles ?? []).map(p => p.class_year))
+  const presentCohorts = new Set(
+    (allProfiles ?? [])
+      .map(p => p.class_year as string)
+      .filter(y => y !== 'CEO' && y !== 'CFO')
+  )
+
+  // Fetch user's own class year so we don't require self-stamping
+  const { data: myProfile } = await supabase
+    .from('profiles')
+    .select('class_year')
+    .eq('id', userId)
+    .single()
+  const myClassYear = myProfile?.class_year as string | undefined
 
   // Evaluate which achievements should now be unlocked
   const toUnlock: AchievementKey[] = []
@@ -116,10 +129,12 @@ export async function checkAndUnlockAchievements(
   if (!unlocked.has('future_match') && hasFutureMatch)
     toUnlock.push('future_match')
 
-  if (!unlocked.has('full_house') && presentClasses.size > 0) {
-    const hasAll = [...presentClasses].every(c => c === userId || partnerClasses.has(c))
-    if (hasAll && partnerClasses.size >= presentClasses.size - 1)
-      toUnlock.push('full_house')
+  // Full House: stamp from every cohort year at the event (excl. own) + CEO & CFO
+  // Require at least 5 distinct cohorts present to prevent trivial test unlocks
+  if (!unlocked.has('full_house') && presentCohorts.size >= 5 && hasLeadership) {
+    const requiredCohorts = [...presentCohorts].filter(c => c !== myClassYear)
+    const hasAll = requiredCohorts.every(c => partnerClasses.has(c))
+    if (hasAll) toUnlock.push('full_house')
   }
 
   // Insert newly unlocked achievements
