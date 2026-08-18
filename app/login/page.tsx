@@ -12,10 +12,12 @@ function isIosNotSafari() {
   return isIos && !isSafari
 }
 
+type Step = 'email' | 'confirm' | 'code'
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
-  const [sent, setSent] = useState(false)
+  const [step, setStep] = useState<Step>('email')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [wrongBrowser, setWrongBrowser] = useState(false)
@@ -24,8 +26,13 @@ export default function LoginPage() {
 
   useEffect(() => { setWrongBrowser(isIosNotSafari()) }, [])
 
-  async function handleSend(e: React.FormEvent) {
+  function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError('')
+    setStep('confirm')
+  }
+
+  async function handleSend() {
     setLoading(true)
     setError('')
 
@@ -40,11 +47,11 @@ export default function LoginPage() {
       } else {
         setError(error.message)
       }
-      setLoading(false)
+      setStep('confirm')
     } else {
-      setSent(true)
-      setLoading(false)
+      setStep('code')
     }
+    setLoading(false)
   }
 
   async function handleVerify(e: React.FormEvent) {
@@ -62,7 +69,8 @@ export default function LoginPage() {
       setError('Invalid or expired code. Please try again.')
       setLoading(false)
     } else {
-      const { data: profile } = await supabase.from('profiles').select('id').eq('id', (await supabase.auth.getUser()).data.user?.id ?? '').single()
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: profile } = await supabase.from('profiles').select('id').eq('id', user?.id ?? '').single()
       router.replace(profile ? '/passport' : '/setup')
     }
   }
@@ -83,6 +91,7 @@ export default function LoginPage() {
           </button>
         </div>
       )}
+
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-2">
           <div className="text-5xl">🛂</div>
@@ -90,36 +99,64 @@ export default function LoginPage() {
           <p className="text-xs text-slate-500 uppercase tracking-widest">Play · Connect · Leave a Legacy</p>
         </div>
 
-        {!sent ? (
-          <form onSubmit={handleSend} className="space-y-4">
+        {/* Step 1: Enter email */}
+        {step === 'email' && (
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm text-slate-400 mb-1.5">Your email</label>
+              <label htmlFor="email" className="block text-sm text-slate-400 mb-1.5">Your email address</label>
               <input
                 id="email"
                 type="email"
                 required
+                autoFocus
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@siemens.com"
                 className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
               />
             </div>
-            {error && <p className="text-sm text-red-400">{error}</p>}
             <button
               type="submit"
+              disabled={!email.trim()}
+              className="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 font-semibold transition disabled:opacity-50"
+            >
+              Continue →
+            </button>
+          </form>
+        )}
+
+        {/* Step 2: Confirm email is correct, then send code */}
+        {step === 'confirm' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-slate-800 p-5 space-y-3">
+              <p className="text-sm text-slate-400">We'll send a sign-in code to:</p>
+              <p className="text-white font-semibold break-all">{email}</p>
+              <button
+                onClick={() => { setStep('email'); setError('') }}
+                className="text-xs text-cyan-400 underline"
+              >
+                Change email
+              </button>
+            </div>
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <button
+              onClick={handleSend}
               disabled={loading}
               className="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 font-semibold transition disabled:opacity-50"
             >
               {loading ? 'Sending…' : 'Send code'}
             </button>
-          </form>
-        ) : (
+          </div>
+        )}
+
+        {/* Step 3: Enter code */}
+        {step === 'code' && (
           <form onSubmit={handleVerify} className="space-y-4">
             <div className="rounded-2xl bg-slate-800 p-5 text-center space-y-1">
               <div className="text-3xl">📬</div>
               <p className="font-medium">Check your email</p>
               <p className="text-sm text-slate-400">
-                We sent a code to <span className="text-white font-medium">{email}</span>
+                Code sent to <span className="text-white font-medium">{email}</span>
               </p>
             </div>
             <div>
@@ -130,6 +167,7 @@ export default function LoginPage() {
                 inputMode="numeric"
                 maxLength={8}
                 required
+                autoFocus
                 value={otp}
                 onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
                 placeholder="••••••••"
@@ -146,10 +184,10 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => { setSent(false); setOtp(''); setError('') }}
+              onClick={() => { setStep('confirm'); setOtp(''); setError('') }}
               className="w-full text-xs text-slate-500 underline"
             >
-              Use a different email
+              Didn't receive a code?
             </button>
           </form>
         )}
