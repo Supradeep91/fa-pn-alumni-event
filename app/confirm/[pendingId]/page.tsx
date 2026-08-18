@@ -29,7 +29,7 @@ export default function ConfirmPage() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
+      if (!user) { router.replace('/login'); return }
       setMyId(user.id)
 
       const { data: pending } = await supabase
@@ -112,7 +112,7 @@ export default function ConfirmPage() {
       .from('pending_stamps')
       .update({ status: 'rejected' })
       .eq('id', pendingId)
-    router.push('/passport')
+    router.replace('/passport')
   }
 
   if (status === 'loading') {
@@ -129,7 +129,7 @@ export default function ConfirmPage() {
         <div className="text-5xl">⏱️</div>
         <h2 className="text-lg font-bold">Request expired</h2>
         <p className="text-sm text-slate-400">This stamp request expired. Scan again!</p>
-        <button onClick={() => router.push('/scan')} className="px-6 py-2.5 bg-cyan-600 rounded-xl font-medium">
+        <button onClick={() => router.replace('/scan')} className="px-6 py-2.5 bg-cyan-600 rounded-xl font-medium">
           Scan again
         </button>
       </div>
@@ -142,7 +142,7 @@ export default function ConfirmPage() {
         <div className="text-5xl">⚠️</div>
         <h2 className="text-lg font-bold">Something went wrong</h2>
         <p className="text-sm text-slate-400">{errorMsg}</p>
-        <button onClick={() => router.push('/passport')} className="px-6 py-2.5 bg-slate-700 rounded-xl font-medium">
+        <button onClick={() => router.replace('/passport')} className="px-6 py-2.5 bg-slate-700 rounded-xl font-medium">
           Back to passport
         </button>
       </div>
@@ -187,7 +187,7 @@ export default function ConfirmPage() {
             </a>
           )}
           <button
-            onClick={() => router.push('/passport')}
+            onClick={() => router.replace('/passport')}
             className={`w-full py-3 rounded-xl font-semibold transition ${
               linkedinUrl
                 ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
@@ -251,7 +251,7 @@ export default function ConfirmPage() {
                   <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
                 </div>
                 <button
-                  onClick={() => router.push('/passport')}
+                  onClick={() => router.replace('/passport')}
                   className="w-full py-3 text-slate-500 text-sm"
                 >
                   Go back (they can confirm later)

@@ -25,7 +25,7 @@ export default function SetupPage() {
     setError('')
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    if (!user) { router.replace('/login'); return }
 
     const payload: Record<string, unknown> = {
       id: user.id,
@@ -41,7 +41,7 @@ export default function SetupPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/passport')
+      router.replace('/passport')
     }
   }
 

@@ -75,7 +75,7 @@ export default function PassportClient({ profile, initialPartners, initialAchiev
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    router.push('/login')
+    router.replace('/login')
   }
 
   async function toggleFutureMatch(partnerId: string) {

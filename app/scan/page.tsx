@@ -40,7 +40,7 @@ export default function ScanPage() {
             await qr.stop().catch(() => {})
 
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) { router.push('/login'); return }
+            if (!user) { router.replace('/login'); return }
 
             if (decodedText === user.id) {
               setStatus('self')

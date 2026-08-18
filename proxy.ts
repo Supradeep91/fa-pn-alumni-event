@@ -34,25 +34,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // /admin only needs auth — admin email check happens inside the page
-  if (pathname.startsWith('/admin')) {
-    return supabaseResponse
-  }
-
-  // All other protected routes need a profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile && pathname !== '/setup') {
-    return NextResponse.redirect(new URL('/setup', request.url))
-  }
-  if (profile && pathname === '/setup') {
-    return NextResponse.redirect(new URL('/passport', request.url))
-  }
-
+  // Auth is all the middleware checks — profile redirect is handled inside each page
   return supabaseResponse
 }
 
