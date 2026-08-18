@@ -27,13 +27,15 @@ export default function SetupPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    const { error } = await supabase.from('profiles').insert({
+    const payload: Record<string, unknown> = {
       id: user.id,
       email: user.email,
       name: name.trim(),
       class_year: classYear,
-      linkedin_url: linkedin.trim() || null,
-    })
+    }
+    if (linkedin.trim()) payload.linkedin_url = linkedin.trim()
+
+    const { error } = await supabase.from('profiles').insert(payload)
 
     if (error) {
       setError(error.message)
