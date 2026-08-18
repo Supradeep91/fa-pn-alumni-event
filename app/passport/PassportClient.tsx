@@ -127,7 +127,7 @@ export default function PassportClient({ profile, initialPartners, initialAchiev
       {incomingRequest && (
         <div
           className="mx-4 mt-4 p-4 bg-yellow-500 text-slate-900 rounded-2xl flex items-center justify-between cursor-pointer active:opacity-80"
-          onClick={() => { setIncomingRequest(null); router.push(`/confirm/${incomingRequest.id}`) }}
+          onClick={() => { window.location.href = `/confirm/${incomingRequest.id}` }}
         >
           <div>
             <p className="font-semibold text-sm">Stamp request!</p>

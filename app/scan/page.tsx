@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 import BottomNav from '@/components/BottomNav'
 
@@ -10,11 +9,11 @@ export default function ScanPage() {
   const [message, setMessage] = useState('')
   const readerRef = useRef<HTMLDivElement>(null)
   const instanceRef = useRef<{ stop: () => Promise<void> } | null>(null)
-  const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   useEffect(() => {
     let stopped = false
+    const supabase = supabaseRef.current
 
     async function startScanner() {
       const { Html5Qrcode } = await import('html5-qrcode')
@@ -40,7 +39,7 @@ export default function ScanPage() {
             await qr.stop().catch(() => {})
 
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) { router.replace('/login'); return }
+            if (!user) { window.location.href = '/login'; return }
 
             if (decodedText === user.id) {
               setStatus('self')
@@ -89,7 +88,8 @@ export default function ScanPage() {
               return
             }
 
-            router.push(`/confirm/${pending.id}`)
+            // Full page navigation — more reliable than client-side router on mobile PWA
+            window.location.href = `/confirm/${pending.id}`
           },
           () => {}
         )
@@ -106,7 +106,7 @@ export default function ScanPage() {
       stopped = true
       instanceRef.current?.stop().catch(() => {})
     }
-  }, [supabase, router])
+  }, [])
 
   function retry() {
     window.location.reload()
