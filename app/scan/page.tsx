@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
-import BottomNav from '@/components/BottomNav'
+
+const NAV_ITEMS = [
+  { label: 'Passport', icon: '🛂', href: '/passport' },
+  { label: 'Scan',    icon: '📷', href: '/scan' },
+  { label: 'Rankings', icon: '🏆', href: '/leaderboard' },
+  { label: 'Agenda',  icon: '📅', href: '/agenda' },
+]
 
 export default function ScanPage() {
   const [status, setStatus] = useState<'starting' | 'scanning' | 'found' | 'error' | 'self'>('starting')
@@ -10,6 +16,11 @@ export default function ScanPage() {
   const readerRef = useRef<HTMLDivElement>(null)
   const instanceRef = useRef<{ stop: () => Promise<void> } | null>(null)
   const supabaseRef = useRef(createClient())
+
+  async function stopAndGo(href: string) {
+    await instanceRef.current?.stop().catch(() => {})
+    window.location.href = href
+  }
 
   useEffect(() => {
     let stopped = false
@@ -161,7 +172,23 @@ export default function ScanPage() {
         )}
       </div>
 
-      <BottomNav active="scan" />
+      {/* Inline nav: stops camera before navigating to prevent race crash */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 safe-bottom">
+        <div className="flex">
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.href}
+              onClick={() => stopAndGo(item.href)}
+              className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 transition ${
+                item.href === '/scan' ? 'text-cyan-400' : 'text-slate-500'
+              }`}
+            >
+              <span className="text-xl leading-none">{item.icon}</span>
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   )
 }
