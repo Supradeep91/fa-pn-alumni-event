@@ -4,17 +4,6 @@ import { useState } from 'react'
 import BottomNav from '@/components/BottomNav'
 import { type AgendaDay } from '@/lib/agenda-data'
 
-const STATUS_BADGE: Record<string, string> = {
-  fixed: 'bg-purple-600 text-white',
-  wip: 'bg-yellow-500 text-slate-900',
-  '50/50': 'bg-orange-500 text-white',
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  fixed: 'Fixed',
-  wip: 'WIP',
-  '50/50': '50/50',
-}
 
 interface Props {
   agenda: AgendaDay[]
@@ -82,11 +71,6 @@ export default function AgendaClient({ agenda }: Props) {
                   )}
                 </div>
               </div>
-              {session.status && (
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${STATUS_BADGE[session.status]}`}>
-                  {STATUS_LABEL[session.status]}
-                </span>
-              )}
             </div>
           </div>
         ))}
