@@ -1,200 +1,272 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
-import { CLASS_LABELS, CLASS_COLORS } from '@/types'
-import { ACHIEVEMENTS, type AchievementKey } from '@/lib/achievements'
+import { ACHIEVEMENTS } from '@/lib/achievements'
+import { getClassLabel, getClassColor } from '@/types'
 
-interface Attendee {
-  id: string
-  name: string
-  class_year: string
-  stamps: number
-  badges: number
-}
-
-interface LeaderboardEntry {
-  class_year: string
-  count: number
-}
+interface ProfileRow { id: string; email: string; name: string; class_year: string; created_at: string }
+interface StampRow   { user_a: string; user_b: string; created_at: string }
+interface AchRow     { user_id: string; key: string; created_at: string }
 
 interface Props {
-  initialAttendeeCount: number
-  initialStampCount: number
-  initialAchievementCount: number
-  initialLeaderboard: LeaderboardEntry[]
-  initialWinners: Record<AchievementKey, string[]>
-  initialAttendees: Attendee[]
+  profiles: ProfileRow[]
+  stamps: StampRow[]
+  achievements: AchRow[]
 }
 
-export default function AdminClient({
-  initialAttendeeCount,
-  initialStampCount,
-  initialAchievementCount,
-  initialLeaderboard,
-  initialWinners,
-  initialAttendees,
-}: Props) {
-  const [attendeeCount] = useState(initialAttendeeCount)
-  const [stampCount, setStampCount] = useState(initialStampCount)
-  const [achievementCount, setAchievementCount] = useState(initialAchievementCount)
-  const [activeTab, setActiveTab] = useState<'overview' | 'attendees'>('overview')
-  const [sort, setSort] = useState<'stamps' | 'badges' | 'name'>('stamps')
-  const router = useRouter()
-  const supabase = createClient()
+export default function AdminClient({ profiles, stamps: initialStamps, achievements: initialAchievements }: Props) {
+  const [stamps, setStamps] = useState<StampRow[]>(initialStamps)
+  const [achievements, setAchievements] = useState<AchRow[]>(initialAchievements)
+  const [tab, setTab] = useState<'overview' | 'attendees'>('overview')
 
   useEffect(() => {
-    const channel = supabase
-      .channel('admin-live')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stamps' }, () => {
-        setStampCount(c => c + 1)
-        router.refresh()
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'achievements' }, () => {
-        setAchievementCount(c => c + 1)
-        router.refresh()
-      })
+    const supabase = createClient()
+    const ch = supabase.channel('admin-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stamps' },
+        p => setStamps(prev => [...prev, p.new as StampRow]))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'achievements' },
+        p => setAchievements(prev => [...prev, p.new as AchRow]))
       .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [supabase, router])
+    return () => { supabase.removeChannel(ch) }
+  }, [])
 
-  const sortedAttendees = [...initialAttendees].sort((a, b) => {
-    if (sort === 'stamps') return b.stamps - a.stamps
-    if (sort === 'badges') return b.badges - a.badges
-    return a.name.localeCompare(b.name)
-  })
+  const profileMap = useMemo(() => new Map(profiles.map(p => [p.id, p])), [profiles])
 
-  const medals = ['🥇', '🥈', '🥉']
+  const connectorCounts = useMemo(() => {
+    const c: Record<string, number> = {}
+    for (const s of stamps) {
+      c[s.user_a] = (c[s.user_a] ?? 0) + 1
+      c[s.user_b] = (c[s.user_b] ?? 0) + 1
+    }
+    return c
+  }, [stamps])
+
+  const topConnectors = useMemo(() =>
+    profiles
+      .map(p => ({ ...p, count: connectorCounts[p.id] ?? 0 }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8),
+    [profiles, connectorCounts])
+
+  const timeline = useMemo(() => {
+    const h: Record<number, number> = {}
+    for (const s of stamps) {
+      const hr = new Date(s.created_at).getHours()
+      h[hr] = (h[hr] ?? 0) + 1
+    }
+    const entries = Object.entries(h).sort(([a], [b]) => +a - +b)
+    const max = Math.max(...entries.map(([, v]) => v), 1)
+    return entries.map(([hr, count]) => ({ hr: +hr, count, pct: Math.round((count / max) * 100) }))
+  }, [stamps])
+
+  const cohortActivity = useMemo(() => {
+    const c: Record<string, number> = {}
+    for (const s of stamps) {
+      const ya = profileMap.get(s.user_a)?.class_year
+      const yb = profileMap.get(s.user_b)?.class_year
+      if (ya) c[ya] = (c[ya] ?? 0) + 1
+      if (yb) c[yb] = (c[yb] ?? 0) + 1
+    }
+    const max = Math.max(...Object.values(c), 1)
+    return Object.entries(c)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 8)
+      .map(([year, count]) => ({ year, count, pct: Math.round((count / max) * 100) }))
+  }, [stamps, profileMap])
+
+  const achievementBreakdown = useMemo(() => {
+    const c: Record<string, string[]> = {}
+    for (const a of achievements) {
+      if (!c[a.key]) c[a.key] = []
+      c[a.key].push(a.user_id)
+    }
+    return ACHIEVEMENTS.map(a => ({
+      ...a,
+      count: c[a.key]?.length ?? 0,
+      names: (c[a.key] ?? []).map(id => profileMap.get(id)?.name ?? '?').slice(0, 3),
+    }))
+  }, [achievements, profileMap])
+
+  const recentStamps = useMemo(() =>
+    [...stamps].reverse().slice(0, 10).map(s => ({
+      a: profileMap.get(s.user_a)?.name ?? '?',
+      b: profileMap.get(s.user_b)?.name ?? '?',
+      at: new Date(s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    })),
+    [stamps, profileMap])
+
+  const attendees = useMemo(() =>
+    profiles.map(p => ({ ...p, count: connectorCounts[p.id] ?? 0 }))
+      .sort((a, b) => b.count - a.count),
+    [profiles, connectorCounts])
 
   return (
-    <div className="min-h-dvh bg-slate-950 text-white">
+    <div className="min-h-dvh bg-slate-950 text-white pb-12">
       {/* Header */}
-      <div className="px-4 pt-10 pb-4 border-b border-slate-800">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-slate-500 mb-0.5">Admin Panel</p>
-            <h1 className="text-xl font-bold">FA PN Event</h1>
-          </div>
-          <button
-            onClick={() => window.open('/finale', '_blank')}
-            className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-semibold rounded-xl text-sm transition"
-          >
-            🎬 Launch Finale
-          </button>
+      <div className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+        <div>
+          <h1 className="font-bold text-lg">Admin Panel</h1>
+          <p className="text-[11px] text-slate-500">FA PN Connect · 21.09</p>
         </div>
+        <a
+          href="/finale"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-sm font-semibold transition"
+        >
+          🎬 Launch Finale
+        </a>
+      </div>
 
-        {/* Live stats */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
+      <div className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
+
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Attendees', value: attendeeCount, emoji: '👥' },
-            { label: 'Stamps', value: stampCount, emoji: '🔖' },
-            { label: 'Badges', value: achievementCount, emoji: '🏅' },
+            { label: 'Registered', value: profiles.length, color: 'text-cyan-400' },
+            { label: 'Connections', value: stamps.length, color: 'text-emerald-400' },
+            { label: 'Badges earned', value: achievements.length, color: 'text-violet-400' },
+            { label: 'Top connector', value: topConnectors[0]?.count ?? 0, sub: topConnectors[0]?.name, color: 'text-amber-400' },
           ].map(s => (
-            <div key={s.label} className="bg-slate-800 rounded-xl p-3 text-center">
-              <div className="text-xl">{s.emoji}</div>
-              <div className="text-2xl font-bold mt-0.5">{s.value}</div>
-              <div className="text-xs text-slate-400">{s.label}</div>
+            <div key={s.label} className="bg-slate-800 rounded-2xl p-4">
+              <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{s.label}</p>
+              {s.sub && <p className="text-[11px] text-slate-500 truncate">{s.sub}</p>}
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="flex mx-4 mt-4 bg-slate-800 rounded-xl p-1">
-        {([['overview', 'Overview'], ['attendees', 'Attendees']] as const).map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${
-              activeTab === id ? 'bg-slate-600 text-white' : 'text-slate-400'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+        {/* Tab bar */}
+        <div className="flex bg-slate-800 rounded-xl p-1">
+          {(['overview', 'attendees'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition ${tab === t ? 'bg-slate-600 text-white' : 'text-slate-400'}`}>
+              {t === 'overview' ? '📊 Overview' : `👥 Attendees (${profiles.length})`}
+            </button>
+          ))}
+        </div>
 
-      <div className="px-4 mt-4 pb-10 space-y-6">
-        {activeTab === 'overview' && (
-          <>
-            {/* Class Leaderboard */}
-            <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Class Leaderboard</h2>
-              <div className="space-y-2">
-                {initialLeaderboard.length === 0 ? (
-                  <p className="text-slate-500 text-sm">No stamps yet.</p>
-                ) : (
-                  initialLeaderboard.map((entry, i) => (
-                    <div key={entry.class_year} className="bg-slate-800 rounded-xl px-4 py-3 flex items-center gap-3">
-                      <span className="text-lg w-7 text-center">{medals[i] ?? `${i + 1}`}</span>
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${CLASS_COLORS[entry.class_year] ?? 'bg-slate-500'}`} />
-                      <span className="flex-1 font-medium">{CLASS_LABELS[entry.class_year] ?? entry.class_year}</span>
-                      <span className="font-mono text-sm font-bold text-slate-300">{entry.count}</span>
+        {tab === 'overview' && (
+          <div className="space-y-6">
+
+            {/* Timeline */}
+            {timeline.length > 0 && (
+              <section className="bg-slate-800 rounded-2xl p-4">
+                <h2 className="text-sm font-semibold text-slate-300 mb-3">Stamp activity by hour</h2>
+                <div className="flex items-end gap-1 h-20">
+                  {timeline.map(({ hr, count, pct }) => (
+                    <div key={hr} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[9px] text-slate-500">{count}</span>
+                      <div
+                        className="w-full bg-cyan-500 rounded-t"
+                        style={{ height: `${Math.max(pct, 4)}%` }}
+                      />
+                      <span className="text-[9px] text-slate-500">{hr}h</span>
                     </div>
-                  ))
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Top connectors */}
+            <section className="bg-slate-800 rounded-2xl p-4">
+              <h2 className="text-sm font-semibold text-slate-300 mb-3">Top connectors</h2>
+              <div className="space-y-2">
+                {topConnectors.filter(c => c.count > 0).map((c, i) => (
+                  <div key={c.id} className="flex items-center gap-3">
+                    <span className="text-slate-500 text-xs w-4">{i + 1}</span>
+                    <div className={`w-7 h-7 rounded-full ${getClassColor(c.class_year)} flex items-center justify-center text-xs font-bold`}>
+                      {c.name[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{c.name}</p>
+                      <p className="text-[11px] text-slate-500">{getClassLabel(c.class_year)}</p>
+                    </div>
+                    <span className="text-sm font-bold text-cyan-400">{c.count}</span>
+                  </div>
+                ))}
+                {topConnectors.every(c => c.count === 0) && (
+                  <p className="text-sm text-slate-500">No connections yet</p>
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* Achievement Winners */}
-            <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Achievement Winners</h2>
-              <div className="space-y-2">
-                {ACHIEVEMENTS.map(a => {
-                  const winners = initialWinners[a.key] ?? []
-                  return (
-                    <div key={a.key} className="bg-slate-800 rounded-xl px-4 py-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span>{a.emoji}</span>
-                        <span className="font-medium text-sm">{a.title}</span>
-                        <span className="ml-auto text-xs text-slate-400">{winners.length} unlocked</span>
+            {/* Cohort activity */}
+            {cohortActivity.length > 0 && (
+              <section className="bg-slate-800 rounded-2xl p-4">
+                <h2 className="text-sm font-semibold text-slate-300 mb-3">Most active cohorts</h2>
+                <div className="space-y-2">
+                  {cohortActivity.map(({ year, count, pct }) => (
+                    <div key={year} className="flex items-center gap-3">
+                      <span className="text-xs text-slate-400 w-10">{getClassLabel(year)}</span>
+                      <div className="flex-1 bg-slate-700 rounded-full h-2">
+                        <div className="bg-cyan-500 h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
                       </div>
-                      {winners.length > 0 ? (
-                        <p className="text-xs text-slate-400 truncate">{winners.join(', ')}</p>
-                      ) : (
-                        <p className="text-xs text-slate-600">No one yet</p>
-                      )}
+                      <span className="text-xs text-slate-400 w-6 text-right">{count}</span>
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Achievement breakdown */}
+            <section className="bg-slate-800 rounded-2xl p-4">
+              <h2 className="text-sm font-semibold text-slate-300 mb-3">Achievements unlocked</h2>
+              <div className="space-y-3">
+                {achievementBreakdown.map(a => (
+                  <div key={a.key} className="flex items-start gap-3">
+                    <span className="text-2xl">{a.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{a.title}</p>
+                      <p className="text-[11px] text-slate-500">{a.names.join(', ')}{a.count > 3 ? ` +${a.count - 3} more` : ''}</p>
+                    </div>
+                    <span className={`text-sm font-bold ${a.count > 0 ? 'text-emerald-400' : 'text-slate-600'}`}>{a.count}</span>
+                  </div>
+                ))}
               </div>
-            </div>
-          </>
+            </section>
+
+            {/* Recent activity */}
+            {recentStamps.length > 0 && (
+              <section className="bg-slate-800 rounded-2xl p-4">
+                <h2 className="text-sm font-semibold text-slate-300 mb-3">Recent connections</h2>
+                <div className="space-y-2">
+                  {recentStamps.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-300">🤝 <span className="font-medium">{s.a}</span> × <span className="font-medium">{s.b}</span></span>
+                      <span className="text-slate-500 text-xs">{s.at}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
         )}
 
-        {activeTab === 'attendees' && (
-          <div>
-            {/* Sort buttons */}
-            <div className="flex gap-2 mb-3">
-              {(['stamps', 'badges', 'name'] as const).map(s => (
-                <button
-                  key={s}
-                  onClick={() => setSort(s)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition capitalize ${
-                    sort === s ? 'bg-cyan-600 text-white' : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-            <div className="space-y-2">
-              {sortedAttendees.map(a => (
-                <div key={a.id} className="bg-slate-800 rounded-xl px-4 py-3 flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${CLASS_COLORS[a.class_year] ?? 'bg-slate-500'}`} />
+        {tab === 'attendees' && (
+          <section className="bg-slate-800 rounded-2xl overflow-hidden">
+            <div className="divide-y divide-slate-700">
+              {attendees.map((a, i) => (
+                <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                  <span className="text-slate-600 text-xs w-5">{i + 1}</span>
+                  <div className={`w-8 h-8 rounded-full ${getClassColor(a.class_year)} flex items-center justify-center text-sm font-bold shrink-0`}>
+                    {a.name[0]}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium">{a.name}</span>
-                    <span className="ml-2 text-xs text-slate-500">{CLASS_LABELS[a.class_year] ?? a.class_year}</span>
+                    <p className="text-sm font-medium truncate">{a.name}</p>
+                    <p className="text-[11px] text-slate-500">{getClassLabel(a.class_year)} · {a.email}</p>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-400 shrink-0">
-                    <span>🔖 {a.stamps}</span>
-                    <span>🏅 {a.badges}</span>
-                  </div>
+                  <span className={`text-sm font-bold ${a.count > 0 ? 'text-cyan-400' : 'text-slate-600'}`}>
+                    {a.count}
+                  </span>
                 </div>
               ))}
+              {attendees.length === 0 && (
+                <p className="px-4 py-8 text-center text-slate-500 text-sm">No attendees yet</p>
+              )}
             </div>
-          </div>
+          </section>
         )}
       </div>
     </div>

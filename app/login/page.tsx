@@ -36,6 +36,14 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
+    const { data: allowed, error: checkErr } = await supabase.rpc('check_email_allowed', { check_email: email })
+    if (checkErr || !allowed) {
+      setError("Your email isn't on the guest list for this event.")
+      setStep('confirm')
+      setLoading(false)
+      return
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { shouldCreateUser: true },
