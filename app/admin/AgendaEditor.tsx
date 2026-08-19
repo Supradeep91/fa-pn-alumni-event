@@ -17,6 +17,20 @@ interface AgendaSession {
   is_highlighted: boolean
 }
 
+function parseDurationMins(duration: string): number | null {
+  const minMatch = duration.match(/^(\d+)\s*min$/)
+  if (minMatch) return parseInt(minMatch[1])
+  const hrMatch = duration.match(/^(\d+(?:\.\d+)?)\s*h$/)
+  if (hrMatch) return Math.round(parseFloat(hrMatch[1]) * 60)
+  return null
+}
+
+function addMins(time: string, mins: number): string {
+  const [h, m] = time.split(':').map(Number)
+  const total = h * 60 + m + mins
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+
 const DAYS = [
   { key: 'day1', label: 'Day 1 — Mo 21.09' },
   { key: 'day2', label: 'Day 2 — Di 22.09' },
@@ -72,6 +86,9 @@ export default function AgendaEditor() {
   async function saveEdit() {
     if (!editingId) return
     setSaving(true)
+
+    const current = sessions.find(s => s.id === editingId)
+
     await supabase.from('agenda_sessions').update({
       time: form.time,
       title: form.title,
@@ -81,6 +98,21 @@ export default function AgendaEditor() {
       status: form.status || null,
       is_alumni_event: form.is_alumni_event ?? false,
     }).eq('id', editingId)
+
+    // Auto-shift the immediate next session if duration is parseable
+    if (current && form.time && form.duration) {
+      const mins = parseDurationMins(form.duration)
+      if (mins !== null) {
+        const endTime = addMins(form.time, mins)
+        const next = sessions
+          .filter(s => s.day === current.day && s.sort_order > current.sort_order)
+          .sort((a, b) => a.sort_order - b.sort_order)[0]
+        if (next && next.time !== endTime) {
+          await supabase.from('agenda_sessions').update({ time: endTime }).eq('id', next.id)
+        }
+      }
+    }
+
     await load()
     cancelEdit()
     setSaving(false)
