@@ -14,6 +14,7 @@ interface DBSession {
   status: string | null
   is_alumni_event: boolean
   is_highlighted: boolean
+  is_section_break: boolean
 }
 
 const DAY_META: Record<string, { label: string; date: string; room: string }> = {
@@ -36,6 +37,7 @@ function dbToAgenda(rows: DBSession[]): AgendaDay[] {
         ...(r.status ? { status: r.status as Session['status'] } : {}),
         ...(r.is_alumni_event ? { isAlumniEvent: true } : {}),
         ...(r.is_highlighted ? { isHighlighted: true } : {}),
+        ...(r.is_section_break ? { isSectionBreak: true } : {}),
       })),
   }))
 }

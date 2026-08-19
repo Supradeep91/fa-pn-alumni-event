@@ -70,6 +70,23 @@ export default function AgendaClient({ agenda }: Props) {
         {day.sessions.map((session, i) => {
           const isNow = session.isHighlighted || i === autoActiveIdx
 
+          if (session.isSectionBreak) {
+            return (
+              <div key={i} className="relative py-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-amber-700/40" />
+                </div>
+                <div className="relative flex flex-col items-center gap-1">
+                  <span className="text-lg">✦</span>
+                  <span className="bg-slate-950 px-4 text-sm text-amber-400/90 italic text-center leading-snug font-medium">
+                    {session.title}
+                  </span>
+                  <span className="text-lg">✦</span>
+                </div>
+              </div>
+            )
+          }
+
           return (
             <div
               key={i}

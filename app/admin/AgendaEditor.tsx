@@ -15,6 +15,7 @@ interface AgendaSession {
   status: string | null
   is_alumni_event: boolean
   is_highlighted: boolean
+  is_section_break: boolean
 }
 
 function parseDurationMins(duration: string): number | null {
@@ -97,6 +98,7 @@ export default function AgendaEditor() {
       duration: form.duration || null,
       status: form.status || null,
       is_alumni_event: form.is_alumni_event ?? false,
+      is_section_break: form.is_section_break ?? false,
     }).eq('id', editingId)
 
     // Auto-shift the immediate next session if duration is parseable
@@ -189,15 +191,26 @@ export default function AgendaEditor() {
                       <Field label="Location" value={form.location ?? ''} onChange={v => setForm(f => ({ ...f, location: v }))} placeholder="Room" />
                     </div>
                     <Field label="Duration" value={form.duration ?? ''} onChange={v => setForm(f => ({ ...f, duration: v }))} placeholder="30 min" />
-                    <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={form.is_alumni_event ?? false}
-                        onChange={e => setForm(f => ({ ...f, is_alumni_event: e.target.checked }))}
-                        className="rounded accent-cyan-500"
-                      />
-                      Alumni event highlight
-                    </label>
+                    <div className="flex flex-col gap-2">
+                      <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.is_alumni_event ?? false}
+                          onChange={e => setForm(f => ({ ...f, is_alumni_event: e.target.checked }))}
+                          className="rounded accent-cyan-500"
+                        />
+                        Alumni event highlight
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.is_section_break ?? false}
+                          onChange={e => setForm(f => ({ ...f, is_section_break: e.target.checked }))}
+                          className="rounded accent-amber-500"
+                        />
+                        Section break divider
+                      </label>
+                    </div>
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={saveEdit}
@@ -219,6 +232,14 @@ export default function AgendaEditor() {
                         Delete
                       </button>
                     </div>
+                  </div>
+                ) : session.is_section_break ? (
+                  <div key={session.id} className="flex items-center gap-3 bg-amber-900/20 border border-amber-700/30 rounded-xl px-3 py-2.5">
+                    <span className="text-xs text-slate-500 font-mono w-10 shrink-0">{session.time}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-amber-400 italic truncate">✦ {session.title}</p>
+                    </div>
+                    <button onClick={() => startEdit(session)} className="text-slate-500 hover:text-white transition shrink-0 p-1 text-sm" title="Edit">✏️</button>
                   </div>
                 ) : (
                   <div key={session.id} className="flex items-center gap-3 bg-slate-700/50 rounded-xl px-3 py-2.5">

@@ -7,6 +7,7 @@ export interface Session {
   status?: 'fixed' | 'wip' | '50/50'
   isAlumniEvent?: boolean
   isHighlighted?: boolean
+  isSectionBreak?: boolean
 }
 
 export interface AgendaDay {
