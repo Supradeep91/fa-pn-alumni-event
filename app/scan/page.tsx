@@ -1,14 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
-
-const NAV_ITEMS = [
-  { label: 'Passport', icon: '🛂', href: '/passport' },
-  { label: 'Scan',    icon: '📷', href: '/scan' },
-  { label: 'Rankings', icon: '🏆', href: '/leaderboard' },
-  { label: 'Agenda',  icon: '📅', href: '/agenda' },
-]
+import BottomNav from '@/components/BottomNav'
 
 export default function ScanPage() {
   const [status, setStatus] = useState<'starting' | 'scanning' | 'found' | 'error' | 'self'>('starting')
@@ -16,10 +11,15 @@ export default function ScanPage() {
   const readerRef = useRef<HTMLDivElement>(null)
   const instanceRef = useRef<{ stop: () => Promise<void> } | null>(null)
   const supabaseRef = useRef(createClient())
+  const router = useRouter()
 
-  async function stopAndGo(href: string) {
-    await instanceRef.current?.stop().catch(() => {})
-    window.location.href = href
+  async function stopCamera() {
+    if (!instanceRef.current) return
+    await Promise.race([
+      instanceRef.current.stop(),
+      new Promise<void>(resolve => setTimeout(resolve, 600)),
+    ]).catch(() => {})
+    instanceRef.current = null
   }
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function ScanPage() {
             await qr.stop().catch(() => {})
 
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) { window.location.href = '/login'; return }
+            if (!user) { router.replace('/login'); return }
 
             if (decodedText === user.id) {
               setStatus('self')
@@ -99,8 +99,7 @@ export default function ScanPage() {
               return
             }
 
-            // Full page navigation — more reliable than client-side router on mobile PWA
-            window.location.href = `/confirm/${pending.id}`
+            router.push(`/confirm/${pending.id}`)
           },
           () => {}
         )
@@ -115,7 +114,7 @@ export default function ScanPage() {
 
     return () => {
       stopped = true
-      instanceRef.current?.stop().catch(() => {})
+      stopCamera()
     }
   }, [])
 
@@ -172,23 +171,19 @@ export default function ScanPage() {
         )}
       </div>
 
-      {/* Inline nav: stops camera before navigating to prevent race crash */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 safe-bottom">
-        <div className="flex">
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.href}
-              onClick={() => stopAndGo(item.href)}
-              className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 transition ${
-                item.href === '/scan' ? 'text-cyan-400' : 'text-slate-500'
-              }`}
-            >
-              <span className="text-xl leading-none">{item.icon}</span>
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      {/* Intercept nav clicks to stop camera before navigating */}
+      <div
+        onClick={async e => {
+          const anchor = (e.target as HTMLElement).closest('a')
+          if (!anchor) return
+          e.preventDefault()
+          const href = anchor.getAttribute('href') ?? '/passport'
+          await stopCamera()
+          router.push(href)
+        }}
+      >
+        <BottomNav active="scan" />
+      </div>
     </div>
   )
 }
