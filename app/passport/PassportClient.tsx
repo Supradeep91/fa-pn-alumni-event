@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 import QRDisplay from '@/components/QRDisplay'
-import StampGrid from '@/components/StampGrid'
 import ConversationQuestions from '@/components/ConversationQuestions'
 import AchievementGrid from '@/components/AchievementGrid'
 import BottomNav from '@/components/BottomNav'
@@ -23,9 +22,10 @@ interface Props {
   initialPartners: Partner[]
   initialAchievements: AchievementKey[]
   initialFutureMatches: string[]
+  isAdmin: boolean
 }
 
-export default function PassportClient({ profile, initialPartners, initialAchievements, initialFutureMatches }: Props) {
+export default function PassportClient({ profile, initialPartners, initialAchievements, initialFutureMatches, isAdmin }: Props) {
   const [partners, setPartners] = useState<Partner[]>(initialPartners)
   const [activeTab, setActiveTab] = useState<'qr' | 'stamps' | 'achievements' | 'questions'>('qr')
   const [incomingRequest, setIncomingRequest] = useState<{ id: string; name: string } | null>(null)
@@ -92,7 +92,6 @@ export default function PassportClient({ profile, initialPartners, initialAchiev
     }
   }
 
-  const collectedYears = partners.map(p => p.class_year)
   const TABS = [
     { id: 'qr' as const, label: 'My QR' },
     { id: 'stamps' as const, label: 'Stamps' },
@@ -104,6 +103,14 @@ export default function PassportClient({ profile, initialPartners, initialAchiev
     <div className="min-h-dvh bg-slate-950 pb-20">
       {/* Header */}
       <div className={`relative px-4 pt-12 pb-6 text-center ${CLASS_COLORS[profile.class_year]}`}>
+        {isAdmin && (
+          <a
+            href="/admin"
+            className="absolute top-4 left-4 text-xs font-semibold opacity-60 hover:opacity-100 transition px-2 py-1 rounded-lg bg-black/20"
+          >
+            ⚙ Admin
+          </a>
+        )}
         <button
           onClick={handleLogout}
           title="Log out"
@@ -162,11 +169,17 @@ export default function PassportClient({ profile, initialPartners, initialAchiev
         )}
 
         {activeTab === 'stamps' && (
-          <div className="space-y-6">
-            <StampGrid collectedYears={collectedYears} />
-            {partners.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Connections</h3>
+          <div className="space-y-3">
+            {partners.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 space-y-2">
+                <p className="text-3xl">🌍</p>
+                <p className="text-sm">No stamps yet — go meet someone!</p>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                  Stamps — {partners.length}
+                </h3>
                 {partners.map(p => {
                   const linkedinUrl = p.linkedin_url
                     ? `https://linkedin.com/in/${p.linkedin_url.replace(/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/?/, '')}`
@@ -199,7 +212,7 @@ export default function PassportClient({ profile, initialPartners, initialAchiev
                     </div>
                   )
                 })}
-              </div>
+              </>
             )}
           </div>
         )}

@@ -15,7 +15,7 @@ export default async function PassportPage() {
     .single()
   if (!profile) redirect('/setup')
 
-  const [stampsRes, achievementsRes, futureMatchesRes] = await Promise.all([
+  const [stampsRes, achievementsRes, futureMatchesRes, adminRes] = await Promise.all([
     supabase
       .from('stamps')
       .select('*, partner_a:profiles!stamps_user_a_fkey(id,name,class_year,linkedin_url), partner_b:profiles!stamps_user_b_fkey(id,name,class_year,linkedin_url)')
@@ -28,6 +28,11 @@ export default async function PassportPage() {
       .from('future_matches')
       .select('flagged_id')
       .eq('flagger_id', user.id),
+    supabase
+      .from('admin_emails')
+      .select('email')
+      .eq('email', user.email!.toLowerCase())
+      .single(),
   ])
 
   const partners = (stampsRes.data ?? []).map(s => {
@@ -38,6 +43,7 @@ export default async function PassportPage() {
 
   const achievements = (achievementsRes.data ?? []).map(a => a.key as AchievementKey)
   const futureMatches = (futureMatchesRes.data ?? []).map(f => f.flagged_id as string)
+  const isAdmin = !!adminRes.data
 
   return (
     <PassportClient
@@ -45,6 +51,7 @@ export default async function PassportPage() {
       initialPartners={partners}
       initialAchievements={achievements}
       initialFutureMatches={futureMatches}
+      isAdmin={isAdmin}
     />
   )
 }
