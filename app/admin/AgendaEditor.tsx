@@ -224,7 +224,7 @@ export default function AgendaEditor() {
                   <div key={session.id} className="flex items-center gap-3 bg-slate-700/50 rounded-xl px-3 py-2.5">
                     <span className="text-xs text-slate-400 font-mono w-10 shrink-0">{session.time}</span>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${session.is_alumni_event ? 'text-cyan-300' : ''}`}>
+                      <p className="text-sm font-medium truncate">
                         {session.title}
                       </p>
                       {(session.speaker || session.location) && (
