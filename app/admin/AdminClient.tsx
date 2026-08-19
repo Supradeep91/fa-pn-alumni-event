@@ -105,9 +105,12 @@ export default function AdminClient({ profiles, stamps: initialStamps, achieveme
     <div className="min-h-dvh bg-slate-950 text-white pb-12">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-        <div>
-          <h1 className="font-bold text-lg">Admin Panel</h1>
-          <p className="text-[11px] text-slate-500">FA PN Connect · 21.09</p>
+        <div className="flex items-center gap-3">
+          <a href="/passport" className="text-slate-400 hover:text-white transition text-sm">← Passport</a>
+          <div>
+            <h1 className="font-bold text-lg leading-tight">Admin Panel</h1>
+            <p className="text-[11px] text-slate-500">FA PN Connect · 21.09</p>
+          </div>
         </div>
         <a
           href="/finale"
