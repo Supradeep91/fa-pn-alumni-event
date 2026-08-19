@@ -23,12 +23,12 @@
 
 | Badge | Unlock Condition |
 |---|---|
-| 🌍 Perfect Stranger | First stamp |
-| ⏳ Time Traveller | Stamps from 5+ different cohort years |
+| 🤝 Perfect Stranger | First stamp |
+| 🗺️ Wanderer | Stamps from 3 different cohort years (excl. CEO/CFO/Coach) |
+| ⏳ Time Traveller | Stamps from 5 different cohort years (excl. CEO/CFO/Coach) |
 | 🔑 Leadership Unlock | Connect with CEO or CFO |
-| 🤝 Connector | 3+ stamps |
-| 🚀 Future Match | Flag at least one connection as a future match |
-| 🏆 Full House | Stamps from every present cohort + CEO & CFO (min 5 cohorts) |
+| 🎓 Mentored | Connect with a Coach |
+| 🏆 Full House | Stamps from every cohort present (excl. own) + CEO & CFO (min 5 cohorts present) |
 
 Achievement logic runs in `lib/achievements.ts` on every stamp confirmation. Checks run client-side via a Supabase RPC with SECURITY DEFINER to avoid exposing other users' data.
 

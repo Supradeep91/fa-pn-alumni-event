@@ -86,9 +86,6 @@ export default function PassportClient({ profile, initialPartners, initialAchiev
     } else {
       await supabase.from('future_matches').insert({ flagger_id: profile.id, flagged_id: partnerId })
       setFutureMatches(prev => new Set([...prev, partnerId]))
-      // Check if future_match achievement just unlocked
-      const newKeys = await checkAndUnlockAchievements(profile.id)
-      if (newKeys.length) setAchievements(prev => [...prev, ...newKeys])
     }
   }
 

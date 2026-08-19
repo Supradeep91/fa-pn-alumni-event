@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase-client'
 
 export type AchievementKey =
+  | 'perfect_stranger'
+  | 'wanderer'
   | 'time_traveller'
   | 'leadership_unlock'
-  | 'perfect_stranger'
-  | 'future_match'
+  | 'mentored'
   | 'full_house'
 
 export interface AchievementDef {
@@ -16,9 +17,21 @@ export interface AchievementDef {
 
 export const ACHIEVEMENTS: AchievementDef[] = [
   {
+    key: 'perfect_stranger',
+    title: 'Perfect Stranger',
+    description: 'Make your very first connection',
+    emoji: '🤝',
+  },
+  {
+    key: 'wanderer',
+    title: 'Wanderer',
+    description: 'Collect stamps from 3 different cohort years',
+    emoji: '🗺️',
+  },
+  {
     key: 'time_traveller',
     title: 'Time Traveller',
-    description: 'Collect stamps from 5+ different cohort years',
+    description: 'Collect stamps from 5 different cohort years',
     emoji: '⏳',
   },
   {
@@ -28,16 +41,10 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     emoji: '🔑',
   },
   {
-    key: 'perfect_stranger',
-    title: 'Perfect Stranger',
-    description: 'Make your very first connection',
-    emoji: '🤝',
-  },
-  {
-    key: 'future_match',
-    title: 'Future Match',
-    description: 'Flag someone as a future connection',
-    emoji: '🚀',
+    key: 'mentored',
+    title: 'Mentored',
+    description: 'Connect with a Coach',
+    emoji: '🎓',
   },
   {
     key: 'full_house',
@@ -51,83 +58,78 @@ export const ACHIEVEMENT_MAP = Object.fromEntries(
   ACHIEVEMENTS.map(a => [a.key, a])
 ) as Record<AchievementKey, AchievementDef>
 
-// Run after every stamp confirmation or future match flag.
+// Run after every stamp confirmation.
 // Returns keys of newly unlocked achievements.
 export async function checkAndUnlockAchievements(
   userId: string
 ): Promise<AchievementKey[]> {
   const supabase = createClient()
 
-  // Fetch current stamps for this user
-  const { data: stamps } = await supabase
-    .from('stamps')
-    .select('user_a, user_b, partner_a:profiles!stamps_user_a_fkey(class_year), partner_b:profiles!stamps_user_b_fkey(class_year)')
-    .or(`user_a.eq.${userId},user_b.eq.${userId}`)
+  const [stampsRes, existingRes, allProfilesRes, myProfileRes] = await Promise.all([
+    supabase
+      .from('stamps')
+      .select('user_a, user_b, partner_a:profiles!stamps_user_a_fkey(class_year), partner_b:profiles!stamps_user_b_fkey(class_year)')
+      .or(`user_a.eq.${userId},user_b.eq.${userId}`),
+    supabase
+      .from('achievements')
+      .select('key')
+      .eq('user_id', userId),
+    supabase
+      .from('profiles')
+      .select('class_year'),
+    supabase
+      .from('profiles')
+      .select('class_year')
+      .eq('id', userId)
+      .single(),
+  ])
 
-  // Fetch already unlocked achievements
-  const { data: existing } = await supabase
-    .from('achievements')
-    .select('key')
-    .eq('user_id', userId)
+  const unlocked = new Set((existingRes.data ?? []).map(a => a.key as AchievementKey))
 
-  const unlocked = new Set((existing ?? []).map(a => a.key as AchievementKey))
-
-  // Fetch future matches
-  const { data: futureMatches } = await supabase
-    .from('future_matches')
-    .select('id')
-    .eq('flagger_id', userId)
-
-  // Build partner class years
+  // Build partner class set
   const partnerClasses = new Set<string>()
-  let hasLeadership = false
-
-  for (const s of stamps ?? []) {
+  for (const s of stampsRes.data ?? []) {
     const isA = s.user_a === userId
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const partnerClass = (isA ? (s as any).partner_b : (s as any).partner_a)?.class_year as string
-    if (partnerClass) {
-      partnerClasses.add(partnerClass)
-      if (partnerClass === 'CEO' || partnerClass === 'CFO') hasLeadership = true
-    }
+    if (partnerClass) partnerClasses.add(partnerClass)
   }
 
-  const totalStamps = (stamps ?? []).length
-  const hasFutureMatch = (futureMatches ?? []).length > 0
+  const totalStamps = (stampsRes.data ?? []).length
+  const hasLeadership = partnerClasses.has('CEO') || partnerClasses.has('CFO')
+  const hasCoach = partnerClasses.has('Coach')
 
-  // Fetch all present class years from profiles (for Full House)
-  // Only count non-leadership cohort years (CEO/CFO handled separately)
-  const { data: allProfiles } = await supabase
-    .from('profiles')
-    .select('class_year')
+  // All cohort years present at the event (excludes CEO/CFO/Coach for Full House check)
   const presentCohorts = new Set(
-    (allProfiles ?? [])
+    (allProfilesRes.data ?? [])
       .map(p => p.class_year as string)
-      .filter(y => y !== 'CEO' && y !== 'CFO')
+      .filter(y => y !== 'CEO' && y !== 'CFO' && y !== 'Coach')
   )
 
-  // Fetch user's own class year so we don't require self-stamping
-  const { data: myProfile } = await supabase
-    .from('profiles')
-    .select('class_year')
-    .eq('id', userId)
-    .single()
-  const myClassYear = myProfile?.class_year as string | undefined
+  // User's own class year — don't require self-stamping for Full House
+  const myClassYear = myProfileRes.data?.class_year as string | undefined
 
-  // Evaluate which achievements should now be unlocked
+  // Count distinct regular cohort years in partner set (excludes special roles)
+  const partnerCohortYears = new Set(
+    [...partnerClasses].filter(y => y !== 'CEO' && y !== 'CFO' && y !== 'Coach')
+  )
+
   const toUnlock: AchievementKey[] = []
 
   if (!unlocked.has('perfect_stranger') && totalStamps >= 1)
     toUnlock.push('perfect_stranger')
 
-  if (!unlocked.has('time_traveller') && partnerClasses.size >= 5)
+  if (!unlocked.has('wanderer') && partnerCohortYears.size >= 3)
+    toUnlock.push('wanderer')
+
+  if (!unlocked.has('time_traveller') && partnerCohortYears.size >= 5)
     toUnlock.push('time_traveller')
 
   if (!unlocked.has('leadership_unlock') && hasLeadership)
     toUnlock.push('leadership_unlock')
 
-  if (!unlocked.has('future_match') && hasFutureMatch)
-    toUnlock.push('future_match')
+  if (!unlocked.has('mentored') && hasCoach)
+    toUnlock.push('mentored')
 
   // Full House: stamp from every cohort year at the event (excl. own) + CEO & CFO
   // Require at least 5 distinct cohorts present to prevent trivial test unlocks
@@ -137,7 +139,6 @@ export async function checkAndUnlockAchievements(
     if (hasAll) toUnlock.push('full_house')
   }
 
-  // Insert newly unlocked achievements
   if (toUnlock.length > 0) {
     await supabase.from('achievements').insert(
       toUnlock.map(key => ({ user_id: userId, key }))

@@ -85,11 +85,11 @@ Each connection row has a 🚀 button. Tapping it flags that person as someone t
 
 | Badge | How to Earn |
 |---|---|
-| 🌍 Perfect Stranger | Your first stamp |
-| ⏳ Time Traveller | Stamps from 5+ different cohort years |
+| 🤝 Perfect Stranger | Your first stamp |
+| 🗺️ Wanderer | Stamps from 3 different cohort years |
+| ⏳ Time Traveller | Stamps from 5 different cohort years |
 | 🔑 Leadership Unlock | Connect with CEO or CFO |
-| 🤝 Connector | 3+ stamps in one session |
-| 🚀 Future Match | Flag at least one connection as a future match |
+| 🎓 Mentored | Connect with a Coach |
 | 🏆 Full House | Stamps from every cohort present + CEO & CFO |
 
 ---
