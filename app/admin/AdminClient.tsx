@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { ACHIEVEMENTS } from '@/lib/achievements'
 import { getClassLabel, getClassColor } from '@/types'
+import AgendaEditor from './AgendaEditor'
 
 interface ProfileRow { id: string; email: string; name: string; class_year: string; created_at: string }
 interface StampRow   { user_a: string; user_b: string; created_at: string }
@@ -18,7 +19,7 @@ interface Props {
 export default function AdminClient({ profiles, stamps: initialStamps, achievements: initialAchievements }: Props) {
   const [stamps, setStamps] = useState<StampRow[]>(initialStamps)
   const [achievements, setAchievements] = useState<AchRow[]>(initialAchievements)
-  const [tab, setTab] = useState<'overview' | 'attendees'>('overview')
+  const [tab, setTab] = useState<'overview' | 'attendees' | 'agenda'>('overview')
 
   useEffect(() => {
     const supabase = createClient()
@@ -141,11 +142,15 @@ export default function AdminClient({ profiles, stamps: initialStamps, achieveme
         </div>
 
         {/* Tab bar */}
-        <div className="flex bg-slate-800 rounded-xl p-1">
-          {(['overview', 'attendees'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition ${tab === t ? 'bg-slate-600 text-white' : 'text-slate-400'}`}>
-              {t === 'overview' ? '📊 Overview' : `👥 Attendees (${profiles.length})`}
+        <div className="flex bg-slate-800 rounded-xl p-1 gap-1">
+          {([
+            { id: 'overview', label: '📊 Overview' },
+            { id: 'attendees', label: `👥 Attendees (${profiles.length})` },
+            { id: 'agenda', label: '📅 Agenda' },
+          ] as const).map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${tab === t.id ? 'bg-slate-600 text-white' : 'text-slate-400'}`}>
+              {t.label}
             </button>
           ))}
         </div>
@@ -271,6 +276,8 @@ export default function AdminClient({ profiles, stamps: initialStamps, achieveme
             </div>
           </section>
         )}
+
+        {tab === 'agenda' && <AgendaEditor />}
       </div>
     </div>
   )
