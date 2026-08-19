@@ -1,54 +1,42 @@
 # MVP Scope
 
-**Goal:** Core game loop works reliably on event day. Nothing more, nothing less.  
-**Target timeline:** ~1.5 weeks
+**Goal:** Core game loop works reliably on event day. Nothing more, nothing less.
 
 ---
 
-## Features
+## Features Shipped
 
 | # | Feature | Detail |
 |---|---|---|
-| 1 | **Email login** | Magic link — one-tap sign-in, no password |
-| 2 | **Profile setup** | Name + cohort year (2000–2026, CEO, CFO, Coach) |
-| 3 | **Digital passport** | QR code, stamp grid (collected as pills), conversation questions |
-| 4 | **QR stamping** | Scan someone's QR → mutual confirmation → stamp recorded for both |
-| 5 | **Conversation questions** | 4 static questions shown on passport screen to guide conversations |
-| 6 | **Class leaderboard** | Live real-time ranking of all classes by number of connections made |
-| 7 | **LinkedIn** | Optional handle on profile setup; LinkedIn button on stamp success screen; LinkedIn icon in connections list |
+| 1 | **OTP email login** | 3-step flow: email → confirm → 8-digit code. No magic links (corporate email scanners consume them). |
+| 2 | **Email allowlist** | `allowed_emails` Supabase table — only listed addresses can log in. Empty table = allow all (safe for testing). |
+| 3 | **Onboarding wizard** | 4 steps: name → cohort year → LinkedIn (optional) → done screen with mission list |
+| 4 | **Digital passport** | QR code tab, stamps tab (connections list), achievements tab, tips tab |
+| 5 | **QR stamping** | Scan QR → mutual confirmation screen → stamp recorded for both |
+| 6 | **Conversation tips** | Static tip cards on passport Tips tab |
+| 7 | **Class leaderboard** | Live real-time ranking of all cohorts by connection count |
+| 8 | **LinkedIn** | Optional handle on setup; LinkedIn button on connection rows |
+| 9 | **Future Match** | 🚀 flag on any connection; unlocks a badge |
 
 ---
 
-## Stamping Flow (detailed)
+## Stamping Flow
 
-1. User A opens passport → displays their QR code
-2. User B scans User A's QR with their camera
-3. Both users see a confirmation screen → both tap **"Confirm"**
-4. Stamp is recorded for both — appears on each other's passport
-5. Achievement logic runs silently in the background
+1. User A opens passport → QR tab → shows their QR code
+2. User B opens Scan tab → scans User A's QR with camera
+3. User B is taken to confirm screen → taps **Connect**
+4. Stamp is recorded for both — appears in each other's Stamps tab immediately
+5. Achievement logic runs in the background
 
-> Mutual confirmation is required to prevent fake stamps.
-
----
-
-## Conversation Questions (default set)
-
-- Something we have in common?
-- What did you learn through FA PN?
-- What are you working on now?
-- Who/what should I connect with?
+> Camera navigation bug fixed: the app waits for the camera to stop before navigating away from the Scan tab.
 
 ---
 
-## Out of Scope for MVP
+## Auth Notes
 
-- Achievements and badge unlocks → V1
-- Achievement notifications → V1
-- Network wall / connection graph → V1
-- Admin panel → V1
-- Finale screen → V1
-- Future Match follow-up email → V1
-- Photo booth, slideshow, memory wall → not in app scope
+- Supabase Auth with `signInWithOtp` + `verifyOtp` (type: `email`, 8-digit code)
+- "Confirm email" toggle must be **OFF** in Supabase Auth settings (Sign In → Email → Confirm email)
+- Middleware does JWT-only check — no DB call on every navigation
 
 ---
 

@@ -2,65 +2,154 @@
 
 ## The Concept
 
-A networking game that gets everyone moving, talking, and connecting across classes.  
+A networking game that gets everyone moving, talking, and connecting across cohorts.  
 Each attendee gets a **digital passport**. The mission: collect stamps by meeting people from other classes.
+
+---
+
+## Login Flow
+
+1. Attendee opens the app URL and enters their email
+2. They confirm the email on a second screen, then tap **Send code**
+3. The app checks the email against the `allowed_emails` table — if not listed, access is denied
+4. Supabase sends an 8-digit one-time code to their inbox
+5. Attendee enters the code → logged in
+
+> Corporate email scanners can follow magic links and consume them before the user clicks — this is why the app uses typed OTP codes instead.
+
+**First-time users** are taken through a 4-step setup wizard:
+- Enter name
+- Pick cohort year (2000–2026, CEO, CFO, Coach)
+- Optionally add LinkedIn handle
+- Shown their mission list → land on passport
 
 ---
 
 ## Player Flow
 
 ### 1. Arrive & Log In
-- Attendee receives an email invite before the event
-- Click the magic link → instantly logged in (no password)
-- Set your name and class year on first login
-- Your passport is ready
+- Attendee opens the app (or installs it to their home screen as a PWA)
+- Completes login and setup in under 2 minutes
+- Passport is ready immediately
 
 ### 2. Find Someone
-- Look for someone from a class year you haven't stamped yet
+- Look for someone from a cohort you haven't stamped yet
 - Or find someone you want to reconnect with
 - CEO and CFO are also players — their stamps are worth chasing
 
 ### 3. Talk
-- Use the conversation questions on your passport as a guide:
+- The Tips tab on the passport shows conversation starters:
   - *Something we have in common?*
   - *What did you learn through FA PN?*
   - *What are you working on now?*
   - *Who/what should I connect with?*
 
 ### 4. Get Stamped
-- Show them your QR code (on your passport screen)
-- They scan it with their camera
-- Both of you tap **"Confirm"** — stamp added to both passports
-- The success screen shows a **LinkedIn button** if they have a handle set — tap to open their profile in one go
-- Check your passport to see your growing collection
+- One person opens their passport → QR tab → shows QR code
+- The other goes to the Scan tab and scans it with their camera
+- Scanner is taken to a confirm screen → taps **Connect**
+- Stamp is recorded for both — appears in each other's Stamps tab
+- Achievement logic runs immediately in the background
+
+> Mutual confirmation is required: the QR owner must be physically present for the stamp to go through.
 
 ### 5. Unlock Achievements & Compete
-- Badges unlock automatically as you hit milestones
-- Your class earns points on the live leaderboard with every connection
-- At the finale, achievements and the class champion are announced
+- Badges unlock automatically as you hit milestones — no action needed
+- Your cohort earns points on the live leaderboard with every connection
+- At the finale, achievements and the cohort champion are announced
 
 ---
 
 ## Passport Screen
 
-Every attendee has a personal passport with:
-- Their unique **QR code** (for others to scan)
-- A **stamp grid** showing which classes they've connected with (displayed as pills)
-- Their **unlocked achievements**
-- The **4 conversation questions**
+Every attendee has a personal passport with four tabs:
+
+| Tab | Content |
+|---|---|
+| **My QR** | Their unique QR code for others to scan |
+| **Stamps** | List of everyone they've connected with — name, cohort colour dot, LinkedIn button, 🚀 future match flag |
+| **🏅** | Achievements grid — locked and unlocked badges |
+| **Tips** | Conversation starter cards |
 
 ### LinkedIn
-Attendees can optionally add their LinkedIn handle during profile setup. When set:
-- A **LinkedIn icon** appears next to their name in the connections list
-- A **LinkedIn button** appears on the stamp success screen so the other person can follow up immediately
+Attendees can optionally add their LinkedIn handle during setup. When set:
+- A LinkedIn button appears on their connection row in other people's Stamps tab
+- The other person can tap it immediately after stamping to save the connection
+
+### Future Match
+Each connection row has a 🚀 button. Tapping it flags that person as someone to stay in touch with. This unlocks the **Future Match** badge and can be used post-event to identify who to follow up with.
 
 ---
 
-## Class vs. Class Challenge
+## Achievements
 
-- Every stamp you collect counts as a point for your class
-- The leaderboard shows live rankings across all classes
-- Connecting *across* classes counts — same-class stamps don't build the network
+| Badge | How to Earn |
+|---|---|
+| 🌍 Perfect Stranger | Your first stamp |
+| ⏳ Time Traveller | Stamps from 5+ different cohort years |
+| 🔑 Leadership Unlock | Connect with CEO or CFO |
+| 🤝 Connector | 3+ stamps in one session |
+| 🚀 Future Match | Flag at least one connection as a future match |
+| 🏆 Full House | Stamps from every cohort present + CEO & CFO |
+
+---
+
+## Admin Panel (`/admin`)
+
+Accessible only to emails listed in the `admin_emails` Supabase table.  
+Admins see a **⚙ Admin** link in the top-left of their passport header.
+
+### Overview tab
+- Live stat cards: registered attendees, total connections, badges earned, top connector
+- Stamp activity timeline (bar chart by hour)
+- Top 8 connectors
+- Cohort activity breakdown
+- Achievement unlock counts
+- Recent connections feed
+
+### Attendees tab
+- Full list of registered attendees with name, cohort, stamp count, and badges
+
+### Agenda tab
+- Live editor for all sessions across Day 1 and Day 2
+- Edit time, title, speaker, location, duration, status per session
+- Add or delete sessions
+- 📍 pin any session to manually highlight it on the attendee agenda
+- When saving a session with a duration (e.g. "30 min"), the next session's start time auto-shifts
+
+### Launch Finale button
+- Opens `/finale` in a new tab — designed to be shown on a projector
+
+---
+
+## Finale Screen (`/finale`)
+
+Public URL — no login required. Designed for full-screen display on a projector.
+
+- Animated connection counter (auto-updates in real time)
+- Pulses on each new stamp
+- Most connected person + most active cohort
+- Badges unlocked with counts
+- Live feed of last 7 connections
+
+---
+
+## Agenda Highlighting
+
+The attendee-facing agenda (`/agenda`) highlights the current session automatically:
+
+- **Auto** — based on current time, the session that started most recently shows a cyan ring and `● Now` badge
+- **Manual** — admin can pin any session with the 📍 button in the Agenda editor; this overrides auto-highlight
+
+Manual pin clears automatically when another session is pinned.
+
+---
+
+## Class vs. Cohort Challenge
+
+- Every stamp counts as a point for that person's cohort
+- The leaderboard shows live rankings across all cohorts
+- Connections across cohorts build the network — same-cohort stamps still count
 
 ---
 
@@ -68,29 +157,5 @@ Attendees can optionally add their LinkedIn handle during profile setup. When se
 
 - CEO and CFO participate as players, not just speakers
 - They have passports and collect stamps like everyone else
-- Connecting with them unlocks the **Leadership Unlock** achievement
-
----
-
-## Achievements Reference
-
-| Badge | How to Earn |
-|---|---|
-| Time Traveller | Stamps from 5+ different class years |
-| Leadership Unlock | Connect with CEO or CFO |
-| Perfect Stranger | Connect with someone you didn't know |
-| Connector | Introduce two people who don't know each other |
-| Future Match | Flag someone as a person to stay in touch with |
-| Full House | Stamps from every class present + CEO & CFO |
-
----
-
-## Event Timeline
-
-| Phase | Duration | What Happens |
-|---|---|---|
-| Arrival | 15 min | Drinks, music — log in and get your passport |
-| Kick-off | 10 min | Quick intro, rules, and mission explained |
-| Connection Challenge | 60–75 min | Network, collect stamps, complete challenges |
-| Finale | 10 min | Achievement winners announced, class champion revealed |
-| Celebrate | 45–60 min | Keep connecting, drinks, music |
+- Connecting with either unlocks the **Leadership Unlock** achievement
+- Both are required for the **Full House** achievement

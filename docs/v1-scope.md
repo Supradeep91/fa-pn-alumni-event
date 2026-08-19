@@ -1,20 +1,21 @@
 # V1 Scope
 
-**Goal:** Full event experience — achievements, network wall, admin control, post-event follow-up.  
-**Target timeline:** ~4 weeks total (MVP + 2.5 additional weeks)
+**Goal:** Full event experience — achievements, admin control, live finale, agenda management.
 
 ---
 
-## Everything in MVP (features 1–7), plus:
+## Everything in MVP, plus:
 
-| # | Feature | Detail |
+| # | Feature | Status |
 |---|---|---|
-| 8 | **Achievements** | 6 badges that auto-unlock based on stamp/connection logic |
-| 9 | **Achievement notifications** | In-app alert + haptic when a badge unlocks |
-| 10 | **Network wall** | Visual graph of all connections, nodes coloured by class year |
-| 11 | **Admin panel** | Manage attendees, view live activity, trigger finale screen |
-| 12 | **Finale screen** | Full-screen display for the projector — shows achievement winners & class champion |
-| 13 | **Future Match follow-up** | Post-event email summarising who you connected with and their contact details |
+| 10 | **Achievements** — 6 badges, auto-unlock | ✅ Built |
+| 11 | **Admin panel** — stats, attendees, agenda, finale launch | ✅ Built |
+| 12 | **Admin access via DB** — `admin_emails` Supabase table | ✅ Built |
+| 13 | **Finale screen** — projector display, live counter, feed | ✅ Built |
+| 14 | **Agenda editor** — DB-backed, editable from admin panel | ✅ Built |
+| 15 | **Session highlighting** — auto (time-based) + manual pin | ✅ Built |
+| 16 | **Network wall / connection graph** | ❌ Not built |
+| 17 | **Future Match follow-up email** | ❌ Not built |
 
 ---
 
@@ -22,72 +23,87 @@
 
 | Badge | Unlock Condition |
 |---|---|
-| **Time Traveller** | Collect stamps from 5+ different class years |
-| **Leadership Unlock** | Connect with the CEO or CFO |
-| **Perfect Stranger** | Connect with someone you didn't know before the event |
-| **Connector** | Introduce two people who don't know each other (self-reported) |
-| **Future Match** | Mark at least one connection as someone to stay in touch with |
-| **Full House** | Collect stamps from every present class + CEO & CFO |
+| 🌍 Perfect Stranger | First stamp |
+| ⏳ Time Traveller | Stamps from 5+ different cohort years |
+| 🔑 Leadership Unlock | Connect with CEO or CFO |
+| 🤝 Connector | 3+ stamps |
+| 🚀 Future Match | Flag at least one connection as a future match |
+| 🏆 Full House | Stamps from every present cohort + CEO & CFO (min 5 cohorts) |
 
----
-
-## Network Wall
-
-- Each attendee = a node, coloured by class year
-- A connection line appears between two nodes when they stamp each other
-- Visible on a shared screen / projector during the networking phase
-- Clicking a node shows the person's name and class
-
-> Fallback if graph is too complex to build in time: a live connection count list grouped by class pair (e.g. "Class '21 ↔ Class '23: 12 connections").
+Achievement logic runs in `lib/achievements.ts` on every stamp confirmation. Checks run client-side via a Supabase RPC with SECURITY DEFINER to avoid exposing other users' data.
 
 ---
 
 ## Admin Panel
 
-- View all registered attendees and their class
-- See live stamp counts and achievement unlocks
-- Manually trigger the **Finale Screen** on the projector display
-- Export attendee connection data post-event (CSV)
+Single page at `/admin`, server-rendered with auth gate.
+
+**Access control:** checked against `admin_emails` Supabase table on each page load. Non-admins are redirected to `/passport`. The ⚙ Admin link appears in the passport header only for admin users.
+
+**Tabs:**
+- **Overview** — stat cards, hourly timeline, top connectors, cohort breakdown, achievement counts, recent connections feed
+- **Attendees** — full attendee list with stamp count and badge count
+- **Agenda** — inline editor for all sessions; add, edit, delete, pin
+
+**Launch Finale** button opens `/finale` in a new tab.
+
+Real-time updates via Supabase channel subscription on `stamps` and `achievements` tables.
 
 ---
 
 ## Finale Screen
 
-Designed to be shown on a projector at the end of the 60–75 min networking phase.
+Public URL at `/finale` — no login required (URL is access control).
 
-- Class vs. Class winner (most connections)
-- Achievement winners per badge category
-- Total connections made across the entire event
-
----
-
-## Future Match Follow-up
-
-- During the event, users can flag a connection as a "Future Match"
-- 24 hours after the event, an automated email goes out to each attendee
-- Email includes: list of everyone they stamped, Future Match contacts with name + class + (optional) LinkedIn
+- Designed for a projector or large display
+- Animated connection counter with smooth count-up
+- Pulses on each new stamp (Supabase Realtime subscription)
+- Top connector and most active cohort callouts
+- Achievement breakdown grid
+- Live feed of last 7 connections
 
 ---
 
-## Open Questions
+## Agenda Editor
 
-- [ ] Who operates the admin panel on event day?
-- [ ] What are the prizes for achievement winners?
-- [ ] Should CEO/CFO profiles show a special indicator on the network wall?
-- [ ] Keep the app live after the event, or shut it down?
-- [ ] Does "Perfect Stranger" require verification, or is self-reported fine?
+Agenda is stored in the `agenda_sessions` Supabase table (not a static file).
+
+- Falls back to `lib/agenda-data.ts` if the table is empty
+- Admin can edit any session inline: time, title, speaker, location, duration, status, alumni highlight flag
+- Auto-shifts the next session's start time when a parseable duration is saved (e.g. "30 min" → next session moves to start + 30)
+- 📍 pin manually highlights a session in the attendee agenda — overrides the automatic time-based highlight
+- Attendee agenda auto-highlights the current session based on device time; shows cyan ring + pulsing `● Now` badge
 
 ---
 
-## Effort Breakdown
+## Architecture Notes
 
-| Feature | Estimated Days |
-|---|---|
-| MVP (features 1–7, including LinkedIn) | 7–8 days ✓ done |
-| Achievements engine | 2 days |
-| Achievement notifications | 0.5 day |
-| Network wall (graph) | 2 days |
-| Admin panel | 2 days |
-| Finale screen | 1 day |
-| Future Match follow-up email | 1 day |
-| **Total** | **~18–20 days** |
+### Auth
+- Supabase Auth, OTP via email (8-digit code, not magic link)
+- Middleware (`proxy.ts`) does JWT-only auth — no DB call per request
+- Each page handles its own data fetching and redirect logic
+
+### Data flow
+- Server components fetch initial data (SSR)
+- Client components subscribe to Supabase Realtime for live updates
+- No API routes — all DB access goes through Supabase client directly
+
+### RLS
+- All tables have Row Level Security enabled
+- Users can only read/write their own rows (profiles, stamps, achievements, future_matches)
+- `allowed_emails` and `admin_emails` have open SELECT policies for authenticated users
+- `agenda_sessions` has open SELECT (public read) and authenticated write
+
+### Performance
+- Middleware removed DB profile check — saves 200–400ms per navigation
+- Passport page fetches profile + stamps + achievements + admin check in a single `Promise.all`
+- Camera stop awaited before navigation to prevent race conditions on Scan tab
+
+---
+
+## Not Built (future ideas)
+
+- **Network wall** — visual graph of all connections, nodes coloured by cohort
+- **Future Match follow-up email** — automated post-event email with connection list and Future Match contacts
+- **Push notifications** — badge unlock alerts via service worker
+- **CSV export** — attendee + connection data for post-event analysis
