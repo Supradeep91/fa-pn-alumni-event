@@ -27,7 +27,7 @@ function dbToAgenda(rows: DBSession[]): AgendaDay[] {
     ...meta,
     sessions: rows
       .filter(r => r.day === key)
-      .sort((a, b) => a.sort_order - b.sort_order || a.time.localeCompare(b.time))
+      .sort((a, b) => a.time.localeCompare(b.time) || a.sort_order - b.sort_order)
       .map(r => ({
         time: r.time,
         title: r.title,

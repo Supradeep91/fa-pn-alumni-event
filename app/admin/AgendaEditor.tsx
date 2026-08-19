@@ -159,7 +159,7 @@ export default function AgendaEditor() {
       {DAYS.map(({ key, label }) => {
         const daySessions = sessions
           .filter(s => s.day === key)
-          .sort((a, b) => a.sort_order - b.sort_order || a.time.localeCompare(b.time))
+          .sort((a, b) => a.time.localeCompare(b.time) || a.sort_order - b.sort_order)
 
         return (
           <div key={key} className="bg-slate-800 rounded-2xl p-4 space-y-3">
