@@ -14,6 +14,7 @@ interface AgendaSession {
   duration: string | null
   status: string | null
   is_alumni_event: boolean
+  is_highlighted: boolean
 }
 
 const DAYS = [
@@ -89,6 +90,17 @@ export default function AgendaEditor() {
     if (!confirm('Delete this session?')) return
     await supabase.from('agenda_sessions').delete().eq('id', id)
     setSessions(prev => prev.filter(s => s.id !== id))
+  }
+
+  async function toggleHighlight(id: string, current: boolean) {
+    if (current) {
+      await supabase.from('agenda_sessions').update({ is_highlighted: false }).eq('id', id)
+      setSessions(prev => prev.map(s => s.id === id ? { ...s, is_highlighted: false } : s))
+    } else {
+      await supabase.from('agenda_sessions').update({ is_highlighted: false }).neq('id', 'none')
+      await supabase.from('agenda_sessions').update({ is_highlighted: true }).eq('id', id)
+      setSessions(prev => prev.map(s => ({ ...s, is_highlighted: s.id === id })))
+    }
   }
 
   async function addSession(day: string) {
@@ -192,6 +204,13 @@ export default function AgendaEditor() {
                     {session.status && (
                       <span className="text-[10px] text-slate-500 shrink-0">{session.status}</span>
                     )}
+                    <button
+                      onClick={() => toggleHighlight(session.id, session.is_highlighted)}
+                      title={session.is_highlighted ? 'Remove highlight' : 'Highlight as current'}
+                      className={`shrink-0 p-1 text-sm transition ${session.is_highlighted ? 'opacity-100' : 'opacity-30 hover:opacity-70'}`}
+                    >
+                      📍
+                    </button>
                     <button
                       onClick={() => startEdit(session)}
                       className="text-slate-500 hover:text-white transition shrink-0 p-1 text-sm"
